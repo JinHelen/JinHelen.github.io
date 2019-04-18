@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555592885500">
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555595294789">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
 
 
@@ -35,7 +35,7 @@
   <div class="top-container" data-aos="fade-right">
     <div class="top-header-container">
       <a class="site-title-container" href="https://JinHelen.github.io">
-        <img src="https://JinHelen.github.io/images/avatar.png?v=1555592885500" class="site-logo">
+        <img src="https://JinHelen.github.io/images/avatar.png?v=1555595294789" class="site-logo">
         <h1 class="site-title">JinHelen</h1>
       </a>
       <div class="menu-btn" @click="menuVisible = !menuVisible">
@@ -104,14 +104,15 @@
               </div>
             
             <div class="post-content">
-              <p>😄对豆瓣图书的数据集进行分析</p>
+              <p>📖对豆瓣图书的数据集进行分析，方案一根据图书分析用户数，方案二根据用户分析图书数</p>
 <!-- more -->
 <h2 id="1-数据准备">1 数据准备</h2>
 <p>来自 <a href="http://opendata.pku.edu.cn/dataset.xhtml?persistentId=doi:10.18170/DVN/LA9GRH">豆瓣图书数据集</a>，表结构是用户id-图书id-评分。</p>
 <h2 id="2-数据分析">2 数据分析</h2>
 <h3 id="21-根据图书分析用户数">2.1 根据图书分析用户数</h3>
-<p>思路：分析用户评分最多的和最小的N本图书对应的评分用户数。
-先根据图书</p>
+<blockquote>
+<p>思路：分析用户评分最多的和最小的N本图书对应的评分用户数。</p>
+</blockquote>
 <p>（1）加载数据集，放入字典结构</p>
 <pre><code>def _load_data(file_path):
 	book_rate_map = dict()
@@ -156,7 +157,7 @@ return book_rate_map
 <pre><code># -*- coding: utf-8 -*-
 
 &quot;&quot;&quot;
-    Author：Smilehe
+    Author：JinHelen
     Date：2019-04-16
     Desc：分析豆瓣数据集中评分最多的N本图书和最少的N本图书涉及的用户数
     思路：
@@ -234,7 +235,147 @@ _topk_book_to_user()
 注意：数字代表每本图书下的用户数
 </code></pre>
 <h3 id="22-根据用户分析图书数">2.2 根据用户分析图书数</h3>
-<p>（1）</p>
+<blockquote>
+<p>思路：分析豆瓣数据集中评分行为最多的和最少的用户涉及的图书数</p>
+</blockquote>
+<p>（1）加载数据</p>
+<pre><code>def _load_data(file_path):
+    user_rate_map = dict()
+    for line in open(file_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+        user, bookid, score = line.strip().split(&quot;::&quot;)
+        #user_rate_map = {user:{bookid:score}}
+        user_rate_map.setdefault(user,{})
+        user_rate_map[user][bookid] = score
+    return user_rate_map
+</code></pre>
+<p>（2）获取评分行为最多的M个用户和最少的N个用户</p>
+<pre><code>def _most_rate_users(most,small):
+		user_rate_score = _load_data(&quot;./data/douban.dat&quot;)
+		#用户-图书数数据集
+		user_rate_num = dict()
+		#图书id数据集
+		books = set()
+		for user in user_rate_score.keys():
+				user_rate_num[user] = len(user_rate_score[user])
+				for book in user_rate_score[user].keys():
+						books.add(book)
+		#按照图书书倒排，从大到小排序
+		new_user_rate_num = sorted(user_rate_num.items(),key=lambda k:k[1],reverse=True)
+		print(&quot;总有用户数目：{}&quot;.format(new_user_rate_num.__len__()))
+		print(&quot;总有图书数目：{}&quot;.format(books.__len__()))
+		#按照图书书正排，从小到大排序
+		new_1_user_rate_num = sorted(user_rate_num.items(),key=lambda k:k[1],reverse=False)
+	  return list(dict(new_user_rate_num[:most]).keys())+list(dict(new_1_user_rate_num[:small]).keys()),user_rate_score
+</code></pre>
+<p>（3）将对应的用户和图书id写入文件</p>
+<pre><code>def _write_users_and_books(users,books):
+		fw = open(&quot;data/select_users.txt&quot;,&quot;w&quot;)
+		fw.write(&quot;\n&quot;.join(users))
+		fw.close()
+		
+		fw = open(&quot;data/select_books.txt&quot;,&quot;w&quot;)
+		fw.write(&quot;\n&quot;.join(books))
+		fw.close()
+</code></pre>
+<p>（4）获取用户和对应的图书数</p>
+<pre><code>def _top_user_to_book():
+		book = set()
+		users,user_rate_score = _most_rate_users(50,50)
+		for user in users:
+				for book in user_rate_score[user].keys():
+						books.add(book)
+				print(books.__len__())
+				_write_users_and_books(users,list(books))
+</code></pre>
+<p>完整代码如下：</p>
+<pre><code>&quot;&quot;&quot;
+    Author：JinHelen
+    Date：2019-04-16
+    Desc：分析豆瓣数据集中评分行为最多的和最少的用户涉及的图书数
+    思路：
+    1、加载数据，返回字典结构，数据集形式为：{user:{bookid:score}}
+    2、要获取评分行为最多的M个和最少的N个用户
+    （1）计算每名用户下的图书数，得到用户-图书数数据集，记录下图书id
+    （2）按照图书数，采用倒排和正排，分别取前M个用户和前N个用户
+    （3）返回M+N个用户和原数据集
+    （4）遍历得到的M+N个用户，获取每个用户下的图书id，计算图书数
+    3、将得到的M+N个用户存到txt中，得到的这些用户评价过的图书存到text中
+
+&quot;&quot;&quot;
+# 加载数据
+def _load_data(file_path):
+    user_rate_map = dict()
+    for line in open(file_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+        user, bookid, score = line.strip().split(&quot;::&quot;)
+        #user_rate_map = {user:{bookid:score}}
+        user_rate_map.setdefault(user,{})
+        user_rate_map[user][bookid] = score
+    return user_rate_map
+
+#获取评分行为最多的M个用户和最少的N个用户
+def _most_rate_users(most,small):
+    #用户-图书id-评分数据集
+    user_rate_score = _load_data(&quot;./data/douban.dat&quot;)
+    #用户-图书数数据集
+    user_rate_num = dict()
+    #图书id数据集
+    books = set()
+    for user in user_rate_score.keys():
+        user_rate_num[user] = len(user_rate_score[user])
+        for book in user_rate_score[user].keys():
+            books.add(book)
+    # 按照图书数倒排，revers=True 表示从大到小排序
+    new_user_rate_num = sorted(user_rate_num.items(),key=lambda k:k[1],reverse=True)
+    print(&quot;总有用户数目：{}&quot;.format(new_user_rate_num.__len__()))
+    print(&quot;总有图书数目：{}&quot;.format(books.__len__()))
+    # print(dict(new_user_rate_num[:most]))
+
+    # 按照图书数正排，revers=False 表示从小到大排序
+    new_1_user_rate_num = sorted(user_rate_num.items(), key=lambda k: k[1], reverse=False)
+    # print(dict(new_1_user_rate_num[:small]))
+
+    return list(dict(new_user_rate_num[:most]).keys()) + list(dict(new_1_user_rate_num[:small]).keys()),user_rate_score
+
+#将对应的用户和图书id写入文件
+def _write_users_and_books(users,books):
+    fw = open(&quot;data/select_users.txt&quot;,&quot;w&quot;)
+    fw.write(&quot;\n&quot;.join(users))
+    fw.close()
+
+    fw = open(&quot;data/select_books.txt&quot;, &quot;w&quot;)
+    fw.write(&quot;\n&quot;.join(books))
+    fw.close()
+
+#获取用户和对应的图书数
+def _top_user_to_book():
+    books = set()
+    users,user_rate_score = _most_rate_users(50,50)
+    for user in users:
+        for book in user_rate_score[user].keys():
+            books.add(book)
+        #每个用户下的图书数
+        print(books.__len__())
+
+        _write_users_and_books(users, list(books))
+
+
+_top_user_to_book()
+</code></pre>
+<p>运行结果部分内容：</p>
+<pre><code>总有用户数目：383033
+总有图书数目：80008
+4110
+5747
+6765
+7768
+8330
+...
+24043
+24043
+24044
+24046
+注：数字分别代表每位用户下的图书数
+</code></pre>
 
             </div>
             
