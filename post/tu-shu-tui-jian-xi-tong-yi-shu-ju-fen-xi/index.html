@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>图书推荐系统（一）——数据分析 | Smile</title>
+<meta name="description" content="I can do it!">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555574150200">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://JinHelen.github.io">
+        <img src="https://JinHelen.github.io/images/avatar.png?v=1555574150200" class="site-logo">
+        <h1 class="site-title">Smile</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      I can do it!
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">图书推荐系统（一）——数据分析</h2>
+            <div class="post-date">2019-04-18</div>
+            
+              <div class="feature-container" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-yi-shu-ju-fen-xi.jpg')">
+              </div>
+            
+            <div class="post-content">
+              <p>🌱对豆瓣图书的数据集进行分析</p>
+<!-- more -->
+<h2 id="1-数据准备">1 数据准备</h2>
+<p>来自 <a href="http://opendata.pku.edu.cn/dataset.xhtml?persistentId=doi:10.18170/DVN/LA9GRH">豆瓣图书数据集</a>，表结构是用户id-图书id-评分。</p>
+<h2 id="2-数据分析">2 数据分析</h2>
+<h3 id="21-根据图书分析用户数">2.1 根据图书分析用户数</h3>
+<p>思路：分析用户评分最多的和最小的N本图书对应的评分用户数。
+先根据图书</p>
+<p>（1）加载数据集，放入字典结构</p>
+<pre><code>def _load_data(file_path):
+	book_rate_map = dict()
+	for line in open(file_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+		 user,bookid,rate = line.strip().split(&quot;::&quot;)
+		 #book_rate_map={bookid:{user:score}}
+		 book_rate_map.setfault(bookid,{})
+		 book_rate_map[bookid][user] = score
+return book_rate_map					
+</code></pre>
+<p>(2)获取评分最多的和最少的N本图书</p>
+<pre><code>def _most_rate_books(k):
+	book_rate_score = _load_data(&quot;./data/douban.dat&quot;)
+	#图书id-评分人数数据集
+  book_rate_num = dict()
+  #用户名数据集，set()函数创建一个无序不重复元素集
+  users = set()
+	#计算每本图书下的用户数，以及展示用户
+	for key in book_rate_score.keys():
+		book_rate_num[key] =len(book_rate_score[key])
+		for user in book_rate_score[key].keys():
+			users.add(user)
+	#按照评分人数，从大到小排序
+	new_book_rate_num = sorted(book_rate_num.items(),key = lambda k:k[1],reverse = True)
+	print(&quot;总有图书数目：{}&quot;.format(new_book_rate_num.__len__()))
+	print(&quot;总有用户数目：{}&quot;.format(users.__len__()))
+	#按照评分人数，从小到大排序
+	new_1_book_rate_num = sorted(book_rate_num.items(),key = lambda k:k[1],reverse = False)
+	#返回评分最多的和最少的N本图书id列表+原数据集
+	return list(dict(new_book_rate_num[:k]).keys())+list(dict(new_1_book_rate_num[:k]).keys()),book_rate_score
+</code></pre>
+<p>(3)获取用户评分最多的和最小的N本图书对应的评分用户</p>
+<pre><code>def _topk_book_to_user():
+	user = set()
+	books,book_rate_score = _most_rate_books(30):
+		for book in books:
+			for user in book_rate_score[book].keys():
+				users.add(user)
+			print(users.__user__)
+</code></pre>
+<p>完整代码如下：</p>
+<pre><code># -*- coding: utf-8 -*-
+
+&quot;&quot;&quot;
+    Author：Smilehe
+    Date：2019-04-16
+    Desc：分析豆瓣数据集中评分最多的N本图书和最少的N本图书涉及的用户数
+    思路：
+    1、加载数据，返回字典结构，数据集形式为：{bookid:{user:score}}
+    2、要获取用户评分最多的和最小的N本图书对应的评分用户数
+    （1）计算每本图书下的用户数，得到图书id-用户数数据表，记录下用户名
+    （2）按照评分人数，采用倒排和正排，分别取前N本图书
+    （3）返回2N本图书id和原数据集
+    （4）遍历得到的2N本图书id，获取每本图书下的用户名，计算用户数
+&quot;&quot;&quot;
+
+#加载数据集，返回字典结构
+def _load_data(file_path):
+    book_rate_map = dict()
+    for line in open(file_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+        user, bookid, score = line.strip().split(&quot;::&quot;)
+        #book_rate_map={bookid:{user:score}}
+        book_rate_map.setdefault(bookid,{})
+        book_rate_map[bookid][user]=score
+    return book_rate_map
+#获取用户评分最多的和最少的N本图书，以及图书评分字典
+def _most_rate_books(k):
+    #图书id-用户-评分数据集
+    book_rate_score = _load_data(&quot;./data/douban.dat&quot;)
+    #图书id-用户数数据集
+    book_rate_num = dict()
+    #用户名数据集，set()函数创建一个无序不重复元素集
+    users = set()
+    #这里的keys是指bookid
+    for key in book_rate_score.keys():
+        #计算bookid下的用户数
+        book_rate_num[key] = len(book_rate_score[key])
+        #这里的keys指user
+        for user in book_rate_score[key].keys():
+            #存下用户名
+            users.add(user)
+    #按照评分人数倒排，revers=True 表示从大到小排序
+    # 图书id-用户数数据集 从大到小
+    new_book_rate_num = sorted(book_rate_num.items(),key= lambda k:k[1],reverse=True)
+    #__len__返回元素的个数
+    print(&quot;总有图书数目：{}&quot;.format(new_book_rate_num.__len__()))
+    print(&quot;总有用户数据：{}&quot;.format(users.__len__()))
+    # print(dict(new_book_rate_num[:k]))
+    # 按照评分人数正排，revers=False 表示从小到大排序
+    # 图书id-用户数数据集 从小到大
+    new_1_book_rate_num = sorted(book_rate_num.items(), key=lambda k: k[1], reverse=False)
+    #返回评分最多的和最少的N本图书id+原数据集
+    return list(dict(new_book_rate_num[:k]).keys())+list(dict(new_1_book_rate_num[:k]).keys()),book_rate_score
+
+# 获取用户评分最多的和最小的N本图书对应的评分用户
+def _topk_book_to_user():
+    users = set()
+    books, book_rate_score = _most_rate_books(30)
+    for book in books:
+        for user in book_rate_score[book].keys():
+            users.add(user)
+        print(users.__len__())
+
+_topk_book_to_user()
+</code></pre>
+<p>运行结果部分内容：</p>
+<pre><code>总有图书数目：80008
+总有用户数据：383033
+2071
+2200
+4107
+4248
+4457
+...
+19153
+19154
+19155
+19156
+19156
+注意：数字代表每本图书下的用户数
+</code></pre>
+<h3 id="22-根据用户分析图书数">2.2 根据用户分析图书数</h3>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://JinHelen.github.io/tag/50RlkVQ2x" class="tag">
+                    推荐系统
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://JinHelen.github.io/post/hello-gridea">
+                  <h3 class="post-title">
+                    Hello Gridea
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>
