@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" >
 
-<title>关于 | JinHelen</title>
+<title>图书推荐系统（二）之数据爬取 | JinHelen</title>
 <meta name="description" content="I can do it!">
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -97,15 +97,73 @@
       <div class="main-container">
         <div class="content-container" data-aos="fade-up">
           <div class="post-detail">
-            <h2 class="post-title">关于</h2>
-            <div class="post-date">2019-01-25</div>
+            <h2 class="post-title">图书推荐系统（二）之数据爬取</h2>
+            <div class="post-date">2019-04-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-er-zhi-shu-ju-pa-qu.jpeg')">
+              </div>
             
             <div class="post-content">
-              <p>这里是JinHelen的博客，分享机器学习、推荐系统、计算机视觉、python相关知识，还有自己的感悟，记录自己的成长。
-everything is possible,I believe I can do it!🚀</p>
+              <p>根据上一部分的内容，根据评价过的图书筛选用户，涉及人数太多了，比如出现最多的100本书有4.3w人评价过；按照用户来筛选图书的话，最活跃的50个用户和最不活跃的用户加起来有2.4w本图书。</p>
+<p>方案：决定采用根据用户决定图书的方法，即采用100名用户读过2w+本图书的数据集。</p>
+<p>任务：根据获取的这2w图书id到豆瓣爬图书封面、书名、标签等</p>
+<blockquote>
+<p>思路：</p>
+<p>技术：request+BeautifulSoup</p>
+<p>建立文件：img的文件、图书信息的文件、用来记录出现error的图书id的文件</p>
+<p>流程：选找到url，加载整个网页，再选定要爬取的内容，存入文件中，记录出现error的图书id。</p>
+</blockquote>
+<p>（1）分析 <a href="https://book.douban.com/subject/4913064/">豆瓣图网</a>某一本图书的网页
+这里的数字即代表上一部分内容获取的图书id</p>
+<pre><code>https://book.douban.com/subject/4913064/
+</code></pre>
+<p>（2）</p>
+<pre><code>from bs4 import BeautifulSoup
+from urllib import request,error
+
+import time
+import os 
+import random
+
+class GetCateBooks:
+		def __init__(self):
+				#中文是用户代理，伪装成浏览器。
+				self.headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
+				#获取图书id
+				self.select_books_path = &quot;data/select_books.txt&quot;
+				# 用来记录未正常获取数据的图书信息，方便用来补数
+        self.books_mess_error = list()
+        # 用来保存图书封面路径
+        self.books_img_path = &quot;data/img&quot;
+        # 记录图书信息
+        self.books_mess_path = &quot;data/book_mess.txt&quot;
+				
+		#将数据写入文件
+		def _write_to_file(self,data,filename):
+				fw = open(filename,&quot;a&quot;,encoding=&quot;utf-8&quot;)
+				fw.write(data)
+				fw.close()
+		
+		#获取整体数据，返回body
+		def _get_page_content
+								
+
+
+
+
+</code></pre>
 
             </div>
             
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://JinHelen.github.io/post/po-ke-ri">
+                  <h3 class="post-title">
+                    破壳日
+                  </h3>
+                </a>
+              </div>
             
 
             

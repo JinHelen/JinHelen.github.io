@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" >
 
-<title>关于 | JinHelen</title>
+<title>Django之文件迁移 | JinHelen</title>
 <meta name="description" content="I can do it!">
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -97,15 +97,85 @@
       <div class="main-container">
         <div class="content-container" data-aos="fade-up">
           <div class="post-detail">
-            <h2 class="post-title">关于</h2>
-            <div class="post-date">2019-01-25</div>
+            <h2 class="post-title">Django之文件迁移</h2>
+            <div class="post-date">2019-04-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://JinHelen.github.io/post-images/django-zhi-wen-jian-qian-yi.jpeg')">
+              </div>
             
             <div class="post-content">
-              <p>这里是JinHelen的博客，分享机器学习、推荐系统、计算机视觉、python相关知识，还有自己的感悟，记录自己的成长。
-everything is possible,I believe I can do it!🚀</p>
+              <p>那些年遇到的django的坑</p>
+<!-- more --> 
+<h2 id="安装依赖包">安装依赖包</h2>
+<p>requirements.txt
+内容如下：</p>
+<pre><code>Django==2.1.0
+requests==2.21.0
+PyMySQL==0.9.2
+BeautifulSoup4==4.6.3
+setuptools==39.1.0
+</code></pre>
+<p>在终端执行</p>
+<pre><code>pip install -r requirements.txt
+</code></pre>
+<h2 id="启动django">启动django</h2>
+<p>（1）创建项目</p>
+<pre><code>django-admin startproject BookRec
+</code></pre>
+<p>（2）创建APP</p>
+<pre><code>python manage.py startapp index
+python manage.py startapp user
+python manage.py startapp rank 
+</code></pre>
+<p>（3）创建数据库bookrec</p>
+<p><img src="https://JinHelen.github.io/post-images/1555687430530.png" alt="">
+写上面这两句之后，输入密码，进入数据库</p>
+<pre><code>create database bookrec
+</code></pre>
+<p>（4）在django项目配置mysql</p>
+<pre><code>DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'bookrec',
+        'USER':'root',#这里改成自己的数据库名字
+        'PASSWORD':'123456',#这里改成自己数据库的密码
+        'HOST':'127.0.0.1',
+        'PORT':'3306',
+    }
+}
+</code></pre>
+<p>（5）执行迁移，数据库同步</p>
+<pre><code>python manage.py makemigrations
+python manage.py migrate
+</code></pre>
+<p>（6）将数据写入数据库
+运行z_data/to_mysql里的代码，即可</p>
+<p>（7）创建后台管理员（这里的管理员为admin/admin）</p>
+<pre><code>python manage.py createsuperuser
+</code></pre>
+<p>（8）启动服务</p>
+<pre><code>python manage.py runserver
+</code></pre>
 
             </div>
             
+              <div class="tag-container">
+                
+                  <a href="https://JinHelen.github.io/tag/IbfAfuwK0" class="tag">
+                    Django
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-er-zhi-shu-ju-pa-qu">
+                  <h3 class="post-title">
+                    图书推荐系统（二）之数据爬取
+                  </h3>
+                </a>
+              </div>
             
 
             

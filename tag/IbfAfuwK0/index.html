@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" >
 
-<title>关于 | JinHelen</title>
+<title>Django | JinHelen</title>
 <meta name="description" content="I can do it!">
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -12,12 +12,6 @@
 <link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555687924674">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
 
-
-  
-    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
-  
-
-  
 
 
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
@@ -96,27 +90,34 @@
 
       <div class="main-container">
         <div class="content-container" data-aos="fade-up">
-          <div class="post-detail">
-            <h2 class="post-title">关于</h2>
-            <div class="post-date">2019-01-25</div>
-            
-            <div class="post-content">
-              <p>这里是JinHelen的博客，分享机器学习、推荐系统、计算机视觉、python相关知识，还有自己的感悟，记录自己的成长。
-everything is possible,I believe I can do it!🚀</p>
+          <h2 class="current-tag">标签: Django</h2>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://JinHelen.github.io/post/django-zhi-wen-jian-qian-yi">
+                  <h2 class="post-title">Django之文件迁移</h2>
+                </a>
+                <div class="post-date">
+                  2019-04-19
+                </div>
+                <div class="post-abstract">
+                  <p>那些年遇到的django的坑</p>
 
-            </div>
-            
-            
-
-            
+                </div>
+              </div>
               
-                <div id="gitalk-container" data-aos="fade-in"></div>
+                <a class="right" href="https://JinHelen.github.io/post/django-zhi-wen-jian-qian-yi">
+                  <div class="feature-container" style="background-image: url('https://JinHelen.github.io/post-images/django-zhi-wen-jian-qian-yi.jpeg')">
+                  </div>
+                </a>
               
+            </article>
+          
 
-              
-            
-
-          </div>
+          <div class="pagination-container">
+  
+  
+</div>
 
         </div>
       </div>
@@ -138,29 +139,6 @@ var app = new Vue({
 })
 
 </script>
-
-
-  
-  
-    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-    <script>
-
-      var gitalk = new Gitalk({
-        clientID: 'fc88ed3cf831faf032b7',
-        clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
-        repo: 'JinHelen.github.io',
-        owner: 'JinHelen',
-        admin: ['JinHelen'],
-        id: location.pathname,      // Ensure uniqueness and length less than 50
-        distractionFreeMode: false  // Facebook-like distraction free mode
-      })
-
-      gitalk.render('gitalk-container')
-
-    </script>
-  
-
-  
 
 
 
