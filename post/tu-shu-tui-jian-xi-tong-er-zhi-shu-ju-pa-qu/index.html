@@ -4,7 +4,7 @@
 <meta name="description" content="" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>图书推荐系统（二）之数据爬取 | JinHelen</title>
-<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555770979497">
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555772094714">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
 
@@ -18,7 +18,7 @@
       <div class="main-content">
         <div class="site-header">
   <a href="https://JinHelen.github.io">
-  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555770979497" alt="">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555772094714" alt="">
   </a>
   <h1 class="site-title">
     JinHelen
@@ -83,178 +83,202 @@
                 · 2019-04-19 ·
               </time>
               
+                <a href="https://JinHelen.github.io/tag/50RlkVQ2x" class="post-tags">
+                  # 推荐系统
+                </a>
+              
             </div>
             
               <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-er-zhi-shu-ju-pa-qu.jpeg')">
               </div>
             
             <div class="post-content">
-              <p>根据上一部分的内容，根据评价过的图书筛选用户，涉及人数太多了，比如出现最多的100本书有4.3w人评价过；按照用户来筛选图书的话，最活跃的50个用户和最不活跃的用户加起来有2.4w本图书。</p>
-<p>方案：决定采用根据用户决定图书的方法，即采用100名用户读过2w+本图书的数据集。</p>
-<p>任务：根据获取的这2w图书id到豆瓣爬图书封面、书名、标签等</p>
-<blockquote>
-<p>思路：</p>
-<p>技术：request+BeautifulSoup</p>
-<p>建立文件：img的文件、图书信息的文件、用来记录出现error的图书id的文件</p>
-<p>流程：选找到url，加载整个网页，再选定要爬取的内容，存入文件中，记录出现error的图书id。</p>
-</blockquote>
+              <p>在豆瓣网上爬取图书信息</p>
+ <!-- more -->
+<h2 id="1-前情提要">1 前情提要</h2>
+<p>根据上一部分的内容，根据评价过的图书筛选用户，涉及人数太多了，比如出现最多的100本书有4.3w人评价过；按照用户来筛选图书的话，最活跃的50个用户和最不活跃的用户加起来有2.4w本图书。</p>
+<h2 id="2-方案">2 方案</h2>
+<p>决定采用根据用户决定图书的方法，即采用100名用户读过2w+本图书的数据集。</p>
+<h2 id="3-任务">3 任务</h2>
+<p>根据获取的这2w图书id到豆瓣爬图书封面、书名、标签等</p>
+<h2 id="4-思路">4 思路</h2>
+<p>（1） 技术：request+BeautifulSoup</p>
+<p>（2）建立文件：img的文件、图书信息的文件、用来记录出现error的图书id的文件</p>
+<p>（3）流程：选找到url，加载整个网页，再选定要爬取的图书信息，存入文件中，记录出现error的图书id；再爬图书封面</p>
+<p>（4） 遇到的坑：1、下载图片对IP管控比较严格。解决方案：先下载图书信息，再下载图书封面；2、IP容易被屏蔽。解决方案：连不同的wifi来换IP。</p>
+<h2 id="5-代码实现">5 代码实现</h2>
 <p>（1）分析 <a href="https://book.douban.com/subject/4913064/">豆瓣图网</a>某一本图书的网页
 这里的数字即代表上一部分内容获取的图书id</p>
 <pre><code>https://book.douban.com/subject/4913064/
 </code></pre>
-<p>（2）</p>
-<pre><code>from bs4 import BeautifulSoup
-from urllib import request,error
-
+<p>（2）完整代码</p>
+<pre><code># -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+    Author：Admin
+    Date：2019-04-11
+    Desc：获取图书相关信息
+&quot;&quot;&quot;
+from bs4 import BeautifulSoup
+from urllib import request
 import time
-import os 
-import random
+import os
 
 class GetCateBooks:
-		def __init__(self,select_book_path):
-				#中文是用户代理，伪装成浏览器。
-				self.headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
-				#获取图书id
-				self.select_books_path = select_book_path
-				# 用来记录未正常获取数据的图书信息，方便用来补数
+    def __init__(self, select_book_path):
+        self.headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36'}
+        # 需要获取的图书id文件
+        self.select_books_path = select_book_path
+        # 用来记录未正常获取数据的图书信息，方便用来补数
         self.books_mess_error = list()
         # 用来保存图书封面路径
         self.book_img_path = &quot;data/img&quot;
-        # 记录图书信息
+        # 用来记录图书信息的
         self.book_mess_path = &quot;data/book_mess.txt&quot;
-				
-				#已经获取完成信息的图书id
-				self.have_ids = self._load_data()
-				
-		#已经下载的图书id
-		def _load_data(self):
-				ids = list()
-				for one in open(&quot;data/book_mess.txt&quot;,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines()
-						id = one.strip().split(&quot;\t&quot;)[0]
-						ids.append(id)
-				return ids
-				
-		#将数据写入文件
-		def _write_to_file(self,data,filename):
-				fw = open(filename,&quot;a&quot;,encoding=&quot;utf-8&quot;)
-				fw.write(data)
-				fw.close()
+
+        # 已经获取完成信息的图书id
+        self.have_ids = self._load_data()
+
+    def _load_data(self):
+        ids = list()
+        for one in open(&quot;data/book_mess.txt&quot;,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+            id = one.strip().split(&quot;\t&quot;)[0]
+            ids.append(id)
+        return ids
+
+    # 将数据写入文件
+    def _write_to_file(self, data, filename):
+        fw = open(filename, &quot;a&quot;, encoding=&quot;utf-8&quot;)
+        fw.write(data)
+        fw.close()
+
+    # 获取整体的数据，返回body
+    def _get_page_content(self, url):
+        req = request.Request(url, headers=self.headers )
+        try:
+            res = request.urlopen(req)
+            code_status = res.getcode()
+            if code_status == 200:
+                page = res.read().decode(&quot;utf-8&quot;)
+                body = BeautifulSoup(page, &quot;lxml&quot;).body
+            else:
+                body = None
+            return body
+        except Exception as e:
+            print(&quot;请求时发生错误, 继续执行, {}&quot;.format(e))
+            return None
+
+    # 下载图书封面图片
+    def _download_book_img(self, url, path):
+        request.urlretrieve(url, path)
+
+    # 获取图书的信息
+    def _get_books_mess(self):
+        print(&quot;开始获取所有图书的详细信息 ...&quot;)
+        books_list = [one.strip() for one in open(self.select_books_path, &quot;r&quot;, encoding=&quot;utf-8&quot;).readlines()]
+        print(&quot;共有{}本图书信息需要获取 ...&quot;.format(books_list.__len__()))
+        i = 0
+        for book_id in books_list:
+            href = &quot;https://book.douban.com/subject/&quot; + book_id
+            print(&quot;{} =&gt; 获取链接为：{}的图书信息 ...&quot;.format(i+1,href))
+            i = i+1
+
+            # 随机sleep一段时间
+            # sec = random.randint(1,6)
+            # print(sec)
+            # time.sleep(sec)
+
+            book_mess = list()
+            body = self._get_page_content(href)
+            if body is not None:
+                book_mess.append(book_id)
+                try:
+                    book_name = body.find_all(&quot;span&quot;,property=&quot;v:itemreviewed&quot;)[0].text
+                    # print(book_name)
+                    book_mess.append(book_name)
+                except Exception as e:
+                    print(&quot;ID为：{}的图书名字获取失败，异常为：{}&quot;.format(book_id,e))
+
+                try:
+                    book_img = body.find_all(&quot;a&quot;, class_=&quot;nbg&quot;)[0][&quot;href&quot;]
+                    # print(book_img)
+                    book_mess.append(book_img)
+                except Exception as e:
+                    print(&quot;ID为：{}的图书封面获取失败，异常为：{}&quot;.format(book_id, e))
+
+                try:
+                    book_avg_score = (body.find_all(&quot;strong&quot;,class_=&quot;ll rating_num&quot;)[0].text).replace(&quot; &quot;,&quot;&quot;)
+                    # print(book_avg_score)
+                    book_mess.append(book_avg_score)
+                except Exception as e:
+                    print(&quot;ID为：{}的图书评分获取失败，异常为：{}&quot;.format(book_id, e))
+
+                book_tags = list()
+                try:
+                    div = body.find_all(&quot;div&quot;,class_=&quot;blank20&quot;)[0]
+                    a_list = div.find_all(&quot;a&quot;)
+                    for a in a_list:
+                        book_tags.append(a.text)
+                    # print(book_tags)
+                    book_mess.append(&quot;,&quot;.join(book_tags))
+                except Exception as e:
+                    print(&quot;ID为：{}的图书标签获取失败，异常为：{}&quot;.format(book_id, e))
+
+                # 将图书信息写入文件并下载图片
+                if book_mess is not None:
+                    self._write_to_file(&quot;\t&quot;.join(book_mess)+&quot;\n&quot;,self.book_mess_path)
+                    # if book_img:
+                    #     try:
+                    #         self._download_book_img(book_img, self.book_img_path + &quot;/{}.jpg&quot;.format(book_id))
+                    #     except Exception as e:
+                    #         print(e)
+                else:
+                    self.books_mess_error.append(book_id)
+
+    # 筛选出信息已经下载完成的图书id，将未获取完成的写入文件中，部分图片不下载，下载图片容易导致IP被禁
+    def _select_have_get_bookid(self):
+        not_get_list = set()
+        books_list = [one.strip() for one in open(self.select_books_path, &quot;r&quot;, encoding=&quot;utf-8&quot;).readlines()]
+        i = 0
+        for book_id in books_list:
+            if book_id in self.have_ids:
+                # pass
+                if os.path.exists(&quot;data/img/{}.jpg&quot;.format(book_id)):
+                    continue
+                # 如果图书信息存在，图片不存在，则下载
+                else:
+                    href = &quot;https://book.douban.com/subject/&quot; + book_id
+                    body = self._get_page_content(href)
+                    if body is not None:
+                        book_img = body.find_all(&quot;a&quot;, class_=&quot;nbg&quot;)
+                        if book_img:
+                            book_img = book_img[0][&quot;href&quot;]
+                        else:
+                            continue
+                        try:
+                            self._download_book_img(book_img, self.book_img_path + &quot;/{}.jpg&quot;.format(book_id))
+                        except Exception as e:
+                            print(e)
+                        i+=1
+                        print(&quot;{} =&gt; 图书信息（{}）已经存在，下载图片完成！&quot;.format(i, href))
+            else:
+                not_get_list.add(book_id)
+        fw=open(&quot;data/select_books_not_get.txt&quot;,&quot;a&quot;,encoding=&quot;utf-8&quot;)
+        fw.write(&quot;\n&quot;.join( list(not_get_list) ))
+        fw.close()
+
+if __name__ == &quot;__main__&quot;:
+	 
+    # books = GetCateBooks(&quot;data/select_books_not_get.txt&quot;)
+    # books._get_books_mess()
+    # print(books.books_mess_error)
+    # books._write_to_file(&quot;\n&quot;.join(books.books_mess_error),&quot;data/error.txt&quot;)
 		
-		#获取整体数据，返回body
-		def _get_page_content(self,url):
-				req = request.Request(url, headers=self.headers)
-				try:
-						res = request.urlopen(req)
-						code_status = res.getcode()
-						if code_status == 200:
-								page = res.read().decode(&quot;utf-8&quot;)
-								body = BeautifulSoup(page,&quot;lxml&quot;).body
-						else:
-								body = None
-						return body
-				except Exception as e:
-						print(&quot;请求时发生错误，继续执行，{}&quot;.format(e))
-						return None
-						
-		#下载图书封面图片
-		def _download_book_img(self,url,path):
-				request.urlretrieve(url,path)
-				
-		#获取图书的信息
-		def _get_books_mess(self):
-				print(&quot;开始获取所有图书的详细信息..&quot;)
-				books_list = [one.strip() for one in open(self.select_books_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines()]
-				print(&quot;共有多少{}本图书信息需要获取...&quot;.format(books_list.__len__()))
-				i = 0
-				for book_id in books_list:
-						href = &quot;https://book.douban.com/subject/&quot;+bookid
-						print(&quot;{} =&gt; 获取链接为：{}的图书信息...&quot;.format(i+1,href))
-						i = i+1
-						
-						book_mess = list()
-						book_mess = self._get_content(href)
-						if body is not None:
-								book_mess.append(book_id)
-								try:
-										book_name = body.find_all(&quot;span&quot;,property=&quot;v:itemreviewed&quot;)[0].text
-										book_mess.append(book_name)
-								except Exception as e:
-										print(&quot;ID为：{}的图书名字获取失败，异常为：{}&quot;.format(book_id,e))
-								
-								try:
-									  #beautifulsoup采用css类查找，因为class是python的保留关键字，所以无法使用，可采用class_
-										book_img = body.find_all(&quot;a&quot;,class_ = &quot;nbg&quot;)[0][&quot;href&quot;]
-										book_mess.append(book_img)
-								except Exception as e:
-										print(&quot;ID为：{}的图书封面获取失败，异常为：{}&quot;.format(book_id,e))
-										
-								try:
-										book_avg_score = (body.find_all(&quot;strong&quot;,class_=&quot;ll rating_num&quot;)[0].text).replace(&quot; &quot;,&quot;&quot;)
-										book_mess.append(book_avg_score)
-								except Exception as e:
-										print(&quot;ID为：{}的图书评分获取失败，异常为：{}&quot;.format(bookid,e))
-										
-								book_tags = list()
-								try:
-										div = body.find_all(&quot;div&quot;,class_=&quot;blank20&quot;)[0]
-										a_list = div.find_all(&quot;a&quot;)
-										for a in a_list:
-												book_tags.append(a.text)
-										book_mess.append(&quot;,&quot;.join(book_tags))
-								except Exception as e:
-										print(&quot;ID为：{}的图书标签获取失败，异常为：{}&quot;.format(bookid,e))
-								
-								#将图书信息写入文件并下载图片
-								if book_mess is not None:
-										self._write_to_file(&quot;\t&quot;.join(book_mess)+&quot;\n&quot;,self.book_mess_path)
-								else:
-										self.books_mess_error.append(book_id)
-										
-								# 筛选出信息已经下载完成的图书id，将未获取完成的写入文件中，部分图片不下载，下载图片容易导致IP被禁
-								def _select_have_get_bookid(self):
-										not_get_list = set()
-										books_list = [one.strip() for one in open(self.select_books_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines()]
-										i = 0
-										for book_id in books_list:
-												if book_id in self.have_ids:
-														if os.path.exists(&quot;data/img/{}.jpg&quot;.format(book_id)):
-																continue
-														else:
-																href = &quot;https://book.douban.com/subject/&quot;+book_id
-																body = self._get_page_content(href)
-																if body is not None:
-																		book_img = body.find_all(&quot;a&quot;,class_=&quot;nbg&quot;)
-																		if book_img:
-																				book_img = book_img[0][&quot;href&quot;]
-																		else:
-																				continue
-																		try:
-																				self._download_book_img(book_img,self.book_img_path + &quot;/{}.jpg&quot;.format(bookid))
-																		except Exception as e:
-																				print(e)
-																		i += 1
-																		print(&quot;{} =&gt; 图书信息 ({}) 已经存在，下载图片完成！&quot;.format(i,href))
-												else:
-														not_get_list.add(bookid)
-										fw = open(&quot;data/select_books_not_get.txt&quot;,&quot;a&quot;,eccoding = &quot;utf-8&quot;)
-										fw.write(&quot;\n&quot;.join(list(not_get_list)))
-										fw.close()
-										
-  if __name__ ==&quot;__main__&quot;:
-				books = GetCateBooks(&quot;data/select_books.txt&quot;)
-				books._select_have_get_bookid()
-				
-																
-												
-										
-										
-								
-
-						
-				
+		#执行步骤：先运行下边的程序，得到图书id，是所有的图书id，然后再运行上面的程序，得到book_mess，得到图书信息；再运行下面的程序，可以得到图片。
+		
+    # 过滤得到未获取数据的图书ID
+    books = GetCateBooks(&quot;data/select_books.txt&quot;)
+    books._select_have_get_bookid()
 							
-
-
 </code></pre>
 
             </div>
