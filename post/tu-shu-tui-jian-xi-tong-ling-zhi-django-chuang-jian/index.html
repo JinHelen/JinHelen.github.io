@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
 <meta name="description" content="" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>破壳日 | JinHelen</title>
+<title>图书推荐系统（零）之Django创建 | JinHelen</title>
 <link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555770979497">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
@@ -76,32 +76,76 @@
         <div class="post-detail">
           <article class="post">
             <h2 class="post-title">
-              破壳日
+              图书推荐系统（零）之Django创建
             </h2>
             <div class="post-info">
               <time class="post-time">
-                · 2019-04-18 ·
+                · 2019-04-20 ·
               </time>
-              
-                <a href="https://JinHelen.github.io/tag/tFWZDqsd-" class="post-tags">
-                  # 感悟
-                </a>
               
             </div>
             
-              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/po-ke-ri.jpg')">
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-ling-zhi-django-chuang-jian.jpeg')">
               </div>
             
             <div class="post-content">
-              <p>😄今日心情晴转多云😶</p>
-<!-- more --> 
-<p>今天搭建了博客，好开心😄，以后可以记录自己的点滴了。</p>
-<p>首先感谢<a href="https://gridea.dev/">Gridea</a></p>
-<p>发现有技术的人原来是这么帅气，开源项目，分享精神，帮助很多人，比如我😝。</p>
-<p>今天才分清了自定义域名配置，原来这个是需要到阿里云或者腾讯云注册的，被自己蠢哭。配置软件的时候，还以为这个可以自己随便设定名字，然后傻兮兮去注册，等待解析，殊不知这个是要买的呀。为了网站名好记一点，重新申请了一个github账号（嫌弃原来那个带有数字的账号，而且也没有项目），so以后请叫我JinHelen。</p>
-<p>配置到了博客，开开心心去买水果捞，结果回到寝室，电脑摔了，一个边角磕了一下，呜呜呜.....心痛的无以复加，然后在淘宝买了保护壳，虽然肉疼，但是一劳永逸。这次就算长记性了，做什么都不要大意，不放在心上，代价是惨痛的。</p>
-<p>今天分析了下豆瓣图书的数据集，为之后的图书推荐系统做准备。</p>
-<p>从此开启博客之旅🚀我爱写作，写作爱我✌️</p>
+              <h2 id="1-配置django">1 配置Django</h2>
+<h3 id="11-创建项目">1.1 创建项目</h3>
+<pre><code>django-admin startproject Book
+</code></pre>
+<h3 id="12-创建app">1.2 创建APP</h3>
+<pre><code>python manage.py startapp index
+python manage.py startapp user
+python manage.py startapp rank
+</code></pre>
+<h3 id="13-创建后台管理员这里的管理员为adminadmin">1.3 创建后台管理员（这里的管理员为admin/admin）</h3>
+<pre><code>python manage.py createsuperuser
+</code></pre>
+<h3 id="14-创建数据库">1.4 创建数据库</h3>
+<p><img src="https://JinHelen.github.io/post-images/1555687430530.png" alt=""></p>
+<p>写上面这两句之后，输入密码，进入数据库</p>
+<pre><code>create database book
+</code></pre>
+<h3 id="15-在django项目配置mysql">1.5 在django项目配置mysql</h3>
+<p>（1）在项目文件下的settings.py文件里修改：</p>
+<pre><code>DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'book',
+        'USER':'root',#这里改成自己的数据库名字
+        'PASSWORD':'123456',#这里改成自己数据库的密码
+        'HOST':'127.0.0.1',
+        'PORT':'3306',
+    }
+}
+</code></pre>
+<p>（2）在项目文件下的__init__.py文件里添加：</p>
+<pre><code>import pymysql
+pymysql.install_as_MySQLdb()
+</code></pre>
+<h3 id="16-在项目文件下的settingspy文件里修改app">1.6 在项目文件下的settings.py文件里修改app：</h3>
+<pre><code>INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'index',
+    'user',
+    'rank',
+]
+</code></pre>
+<h2 id="2-展示所有文件">2 展示所有文件</h2>
+<p>添加处理数据的文件z_data，得到的目录如下：
+<img src="https://JinHelen.github.io/post-images/1555770111261.png" alt=""></p>
+<h2 id="3-git版本管理">3 git版本管理</h2>
+<p>网上已经有git的教程，这里贴上<a href="https://www.liaoxuefeng.com/wiki/0013739516305929606dd18361248578c67b8067c8c017b000/001373962845513aefd77a99f4145f0a2c7a7ca057e7570000">廖雪峰的git教程</a></p>
+<p>常用的提交语句：</p>
+<pre><code>git add  ??
+git comment -m &quot;解释性语句&quot;
+git push -u origin master #将本地文件推上github
+</code></pre>
 
             </div>
           </article>
@@ -110,9 +154,9 @@
         
           <div class="next-post">
             <div class="next">下一篇</div>
-            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-yi-zhi-shu-ju-zhun-bei">
+            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-er-zhi-shu-ju-pa-qu">
               <h3 class="post-title">
-                图书推荐系统（一）之数据准备
+                图书推荐系统（二）之数据爬取
               </h3>
             </a>
           </div>  
