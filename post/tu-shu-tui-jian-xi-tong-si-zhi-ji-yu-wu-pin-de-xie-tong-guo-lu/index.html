@@ -1,0 +1,302 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图书推荐系统（四）之基于物品的协同过滤 | JinHelen</title>
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555899881672">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://JinHelen.github.io">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555899881672" alt="">
+  </a>
+  <h1 class="site-title">
+    JinHelen
+  </h1>
+  <p class="site-description">
+    I can do it!
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/JinHelen" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              图书推荐系统（四）之基于物品的协同过滤
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-04-22 ·
+              </time>
+              
+                <a href="https://JinHelen.github.io/tag/50RlkVQ2x" class="post-tags">
+                  # 推荐系统
+                </a>
+              
+            </div>
+            
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-si-zhi-ji-yu-wu-pin-de-xie-tong-guo-lu.jpeg')">
+              </div>
+            
+            <div class="post-content">
+              <p>利用select_data.txt（user-bookid-score），采用基于物品的协同过滤算法，计算物品相似度，为每个用户推荐20个物品。</p>
+ <!-- more --> 
+<h3 id="1-完整代码如下">1、完整代码如下</h3>
+<p>item_based_cf.py</p>
+<pre><code># -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+   Author: JinHelen
+   Date: 2019-04-21
+   Desc: 基于物品的协同过滤算法，产出：
+       1: 每个用户的20个推荐item
+       2: 每个item最相似的20个item
+   思路：
+       1、加载用户id-图书id-评分数据到data文件
+       2、计算物品间相似度。
+       （1）item_user_count记录评价过物品i的人数
+       （2）count为共现矩阵，count={物品i:{物品j:同时为物品i和物品j评分的用户数}}
+       （3）相似度=同时为物品i和物品j评分的用户数/math.sqrt(item_user_count[i]*item_user_count[j])
+       3、构造用户i与用户j的相似度矩阵
+       4、排序，每个item只保留最相似的20个item，写入data/item_sim.json
+       5、为用户进行推荐。用户对物品j的兴趣度 = 用户对物品i的评分*相似度
+       6、构造循环，为每个用户推荐20本图书，写入user_rec_result.txt。
+&quot;&quot;&quot;
+import random
+import math
+import os
+import json
+
+class ItemBasedCF:
+   def __init__(self,datafile):
+       self.datafile = datafile
+       self.data = self.loadData()
+       self.items_sim = self.ItemSimilarityBest()
+
+   # 加载评分数据到data
+   def loadData(self):
+       print(&quot;加载数据...&quot;)
+       data = dict()
+       for line in open(self.datafile):
+           userid,itemid,score = line.strip().split(&quot;,&quot;)
+           #data = {userid:{itemid:score}}
+           data.setdefault(userid,{})
+           data[userid][itemid] = int(score)
+       return data
+
+   # 计算物品之间相似度
+   def ItemSimilarityBest(self):
+       print(&quot;开始计算物品之间的相似度&quot;)
+       if os.path.exists(&quot;data/item_sim.json&quot;):
+           itemSim = json.load(open(&quot;data/item_sim.json&quot;,&quot;r&quot;))
+       else:
+           itemSim = dict()
+           # 得到每个物品有多少用户产生行为
+           item_user_count = dict()
+           # 共现矩阵
+           count = dict()
+
+           for user,item in self.data.items():
+               print(&quot;user is {}&quot;.format(user))
+               # item.keys=itemid
+               for i in item.keys():
+                   # dict.setdefault(key, default=None)。key – 查找的键值，default – 键不存在时，设置的默认键值。
+                   item_user_count.setdefault(i,0)
+                   if self.data[str(user)][i]&gt;0.0:
+                       # 物品i有多少个用户评分
+                       item_user_count[i] += 1
+                   for j in item.keys():
+                       # count={物品i:{物品j:同时为物品i和物品j评分的用户数}}
+                       count.setdefault(i,{}).setdefault(j,0)
+                       if self.data[str(user)][i] &gt; 0.0 and self.data[str(user)][j] &gt; 0.0 and i != j:
+                           count[i][j] = 1
+
+               # 共现矩阵 -&gt;相似度矩阵
+               # i:物品i，related_items = {物品j:同时为物品i和物品j评分的用户数}
+               for i ,related_items in count.items():
+                   itemSim.setdefault(i,dict())
+                   for j,cuv in related_items.items():
+                       # itemSim = {物品1：{物品j：相似度}}
+                       itemSim[i].setdefault(j, 0)
+                       itemSim[i][j] = cuv/math.sqrt(item_user_count[i]*item_user_count[j])
+
+           # 排序，每个item只保留最相似的20个item
+           new_itemSim = dict()
+           for item in itemSim.keys():
+               item_rate = itemSim[item]
+               new_itemSim[item] = dict(sorted(item_rate.items(),key=lambda k:k[1],reverse=True)[:20])
+
+           json.dump(new_itemSim,open('data/item_sim.json','w'))
+           return itemSim
+
+   # 为用户进行推荐，user:用户，k:k个近邻物品，nitem:总共返回n个物品
+   def recommend(self,user,k=8,nitem=20):
+       result = dict()
+       # u_items = {user:{item:score}}
+       u_items = self.data.get(user,{})
+       # i:物品i，pi：用户对物品i的评分
+       for i,pi in u_items.items():
+           # j:物品j，wj：选出与i相似的前8个物品j,排序与i的相似度
+           for j,wj in sorted(self.items_sim[i].items(),key=lambda x:x[1],reverse=True)[:k]:
+               if j in u_items:
+                   continue
+               result.setdefault(j,0)
+               #用户对物品j的兴趣度 = 用户对物品i的评分*相似度
+               result[j] += pi * wj
+       return dict(sorted(result.items(),key=lambda x:x[1],reverse=True)[:nitem])
+
+if __name__ == &quot;__main__&quot;:
+   ib = ItemBasedCF(&quot;data/select_data.dat&quot;)
+
+   #为每个用户推荐20本图书
+   for user in ib.data.keys():
+       _list = list()
+       result = ib.recommend(user)
+       print(&quot;用户{}进行推荐的结果如下：{}&quot;.format(user,result))
+       for key in result:
+           #用户id,图书id,推荐相似度
+           _list.append(&quot;{},{},{}&quot;.format(user,key,result[key]))
+
+       fw = open(&quot;data/user_rec_result.txt&quot;,&quot;a&quot;,encoding=&quot;utf-8&quot;)
+       fw.write(&quot;\n&quot;.join(_list)+&quot;\n&quot;)
+       fw.close()
+
+</code></pre>
+<h3 id="2-输出结果">2、输出结果</h3>
+<p>（1）item_sim.json（计算图书相似度）</p>
+<pre><code>```
+{&quot;2354909&quot;: {&quot;1006644&quot;: 0.7071067811865475, &quot;3228662&quot;: 0.7071067811865475, &quot;4010186&quot;: 0.7071067811865475, &quot;1392712&quot;: 0.7071067811865475, &quot;2063029&quot;: 0.7071067811865475, &quot;3836277&quot;: 0.7071067811865475, &quot;1460381&quot;: 0.7071067811865475, &quot;3891900&quot;: 0.7071067811865475, &quot;1957426&quot;: 0.7071067811865475, &quot;1000121&quot;: 0.7071067811865475, &quot;2349859&quot;: 0.7071067811865475, &quot;1001388&quot;: 0.7071067811865475, &quot;3063891&quot;: 0.7071067811865475, &quot;2044798&quot;: 0.7071067811865475, &quot;3842957&quot;: 0.7071067811865475, &quot;3063893&quot;: 0.7071067811865475, &quot;3234345&quot;: 0.7071067811865475, &quot;3181840&quot;: 0.7071067811865475, &quot;1443008&quot;: 0.7071067811865475, &quot;1193912&quot;: 0.7071067811865475}, &quot;1904516&quot;: {&quot;2071128&quot;: 0.7071067811865475, &quot;4745595&quot;: 0.7071067811865475, &quot;1015498&quot;: 0
+
+.........
+
+&quot;3003684&quot;: 1.0, &quot;1344028&quot;: 1.0, &quot;3876270&quot;: 1.0, &quot;1163378&quot;: 1.0, &quot;3128797&quot;: 1.0, &quot;1101648&quot;: 1.0, &quot;2315091&quot;: 1.0, &quot;4082434&quot;: 1.0, &quot;4736101&quot;: 1.0}, &quot;4187225&quot;: {&quot;1322457&quot;: 1.0, &quot;2782115&quot;: 1.0, &quot;2250081&quot;: 1.0, &quot;3632643&quot;: 1.0, &quot;4817597&quot;: 1.0, &quot;4245043&quot;: 1.0, &quot;2222835&quot;: 1.0, &quot;2208526&quot;: 1.0, &quot;3738701&quot;: 1.0, &quot;2364723&quot;: 1.0, &quot;1189975&quot;: 1.0, &quot;3003684&quot;: 1.0, &quot;1344028&quot;: 1.0, &quot;3876270&quot;: 1.0, &quot;1163378&quot;: 1.0, &quot;3128797&quot;: 1.0, &quot;1101648&quot;: 1.0, &quot;2315091&quot;: 1.0, &quot;4082434&quot;: 1.0, &quot;4736101&quot;: 1.0}}
+```
+</code></pre>
+<p>（2）user_rec_result.txt（为用户推荐图书）</p>
+<pre><code>2668761,1006644,2.82842712474619
+2668761,3228662,2.82842712474619
+2668761,4010186,2.82842712474619
+2668761,1392712,2.82842712474619
+2668761,2063029,2.82842712474619
+2668761,3836277,2.82842712474619
+2668761,1460381,2.82842712474619
+2668761,3891900,2.82842712474619
+4191271,2071128,3.5355339059327373
+4191271,4745595,3.5355339059327373
+4191271,1015498,3.5355339059327373
+......
+maohuhu,1276420,48.587025387966754
+maohuhu,4062752,48.587025387966754
+maohuhu,2268621,48.587025387966754
+maohuhu,3928883,48.587025387966754
+
+</code></pre>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-san-zhi-shu-ju-chu-li">
+              <h3 class="post-title">
+                图书推荐系统（三）之数据处理
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'fc88ed3cf831faf032b7',
+    clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
+    repo: 'JinHelen.github.io',
+    owner: 'JinHelen',
+    admin: ['JinHelen'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>

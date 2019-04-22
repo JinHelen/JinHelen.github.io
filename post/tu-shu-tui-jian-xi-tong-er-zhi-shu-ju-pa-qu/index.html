@@ -4,7 +4,7 @@
 <meta name="description" content="" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>图书推荐系统（二）之数据爬取 | JinHelen</title>
-<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555772094714">
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555899881672">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
 
@@ -18,7 +18,7 @@
       <div class="main-content">
         <div class="site-header">
   <a href="https://JinHelen.github.io">
-  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555772094714" alt="">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555899881672" alt="">
   </a>
   <h1 class="site-title">
     JinHelen
@@ -111,11 +111,12 @@
 这里的数字即代表上一部分内容获取的图书id</p>
 <pre><code>https://book.douban.com/subject/4913064/
 </code></pre>
-<p>（2）完整代码</p>
+<p>（2）完整代码
+get_book_mess.py</p>
 <pre><code># -*- coding: utf-8 -*-
 &quot;&quot;&quot;
-    Author：Admin
-    Date：2019-04-11
+    Author：JinHelen
+    Date：2019-04-20
     Desc：获取图书相关信息
 &quot;&quot;&quot;
 from bs4 import BeautifulSoup
@@ -279,6 +280,18 @@ if __name__ == &quot;__main__&quot;:
     books = GetCateBooks(&quot;data/select_books.txt&quot;)
     books._select_have_get_bookid()
 							
+</code></pre>
+<p>（3）得到book_mess.txt文件：共计2.3w+条</p>
+<pre><code>4758387	并州迷雾	https://img1.doubanio.com/view/subject/l/public/s4377217.jpg	7.4	狄仁杰,推理,悬疑,小说,安娜芳芳,中国,同人作品,神探狄仁杰
+1784978	男人的天方夜谭	https://img3.doubanio.com/view/subject/l/public/s1656293.jpg	6.4	李亚平,历史,杂文,读书笔记,小说,男人的天方夜谭,散文,随笔
+1131678	招财狐狸	https://img3.doubanio.com/view/subject/l/public/s10431130.jpg	6.4	股票,花荣,投资,金融,操盘,投资理财,金融理财什么的,财经
+1510382	济公全传（上下）	https://img3.doubanio.com/view/subject/l/public/s1508026.jpg	7.0	古典文学,济公全传,震后被盗,文学,小说,国人作品,四颗星,古典
+
+..................
+
+3241893	藏地密码4	https://img3.doubanio.com/view/subject/l/public/s3303626.jpg	7.8	小说,西藏,藏地密码,探险,宗教,何马,中国,奇幻
+2030120	史学导论	https://img3.doubanio.com/view/subject/l/public/s2339042.jpg	8.9	历史,史学理论,历史研究入门读物,史学,史学导论,历史学,约翰·托什,思想
+
 </code></pre>
 
             </div>

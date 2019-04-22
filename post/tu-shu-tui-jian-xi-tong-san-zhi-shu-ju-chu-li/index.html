@@ -1,0 +1,260 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图书推荐系统（三）之数据处理 | JinHelen</title>
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555899881672">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://JinHelen.github.io">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555899881672" alt="">
+  </a>
+  <h1 class="site-title">
+    JinHelen
+  </h1>
+  <p class="site-description">
+    I can do it!
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/JinHelen" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              图书推荐系统（三）之数据处理
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-04-22 ·
+              </time>
+              
+                <a href="https://JinHelen.github.io/tag/50RlkVQ2x" class="post-tags">
+                  # 推荐系统
+                </a>
+              
+            </div>
+            
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-san-zhi-shu-ju-chu-li.jpeg')">
+              </div>
+            
+            <div class="post-content">
+              <p>从原始数据中筛选出需要的数据集</p>
+ <!-- more --> 
+<h2 id="1-整理用户评分表">1 、整理用户评分表</h2>
+<p>前一部分筛选出了100名用户和2.4w+本图书</p>
+<p>整理得到用户id-图书id-评分表</p>
+<blockquote>
+<p>思路：
+先用全量数据user-bookid-score，若user在select_users.txt里并且bookid在book_mess.txt里，则得到新的表select_data.dat（user-bookid-score)
+get_new_data.py
+(1)完整代码如下：</p>
+</blockquote>
+<pre><code># -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+    Author：JinHelen
+    Date：2019-04-21
+    Desc：从原始数据中筛选出需要的数据集 &amp; 结合爬取的数据进行筛选
+&quot;&quot;&quot;
+
+class SelectData:
+    def __init__(self):
+        # 后续使用的用户和图书存放的文件路径
+        self.users_path = &quot;data/select_users.txt&quot;
+        self.books_path = &quot;data/select_books.txt&quot;
+        # 包含全量数据的数据集路径
+        self.all_data_path = &quot;data/douban.dat&quot;
+        # 用来保存后续要使用的数据
+        self.select_data_path = &quot;data/select_data.dat&quot;
+        # 已经获取图书信息的图书路径
+        self.book_mess_path = &quot;./data/book_mess.txt&quot;
+        # 已经获取信息的图书id
+        self.have_get_book_ids = self._load_mess_data(self.book_mess_path)
+        self.users = self._load_data(self.users_path)
+        self.books = self._load_data(self.books_path)
+
+
+    # 加载已经获取图书信息的ids
+    def _load_mess_data(self,path):
+        return [line.strip().split(&quot;\t&quot;)[0] for line in open(path,&quot;r&quot;,encoding=&quot;utf-8&quot;)]
+
+    # 加载数据
+    def _load_data(self,path):
+        return [one.strip() for one in open(path, &quot;r&quot;, encoding=&quot;utf-8&quot;).readlines()]
+
+    # 过滤得到所选择的用户涉及的图书评分
+    def _select_use_data(self):
+        _list = list()
+        #先用全量数据douban.dat
+        for line in open(self.all_data_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+            user,bookid,score = line.strip().split(&quot;::&quot;)
+            #user即为选择的这100名用户（select_users.txt文件），book为以爬取的图书信息（book_mess.txt文件）
+            if user in self.users and bookid in self.have_get_book_ids:
+                _list.append(&quot;{},{},{}&quot;.format(user,bookid,score))
+
+        fw = open(self.select_data_path,&quot;w&quot;,encoding=&quot;utf-8&quot;)
+        fw.write(&quot;\n&quot;.join(_list))
+        print(&quot;数据选择完毕，写入文件：{}&quot;.format(self.select_data_path))
+
+if __name__ == &quot;__main__&quot;:
+    select = SelectData()
+    select._select_use_data()
+
+</code></pre>
+<p>(2)输出select_data.txt文件(共记3.9w+条）</p>
+<pre><code>2668761,2354909,4
+4191271,1904516,5
+rearee.r,3327495,5
+28921295,1507657,5
+......
+maohuhu,2339036,5
+maohuhu,2274660,5
+maohuhu,2339039,5
+maohuhu,3115492,5
+maohuhu,4187225,4
+</code></pre>
+<h2 id="2-统计出现标签及出现的次数">2、统计出现标签及出现的次数</h2>
+<p>（1）完整代码如下：</p>
+<pre><code>#-*- coding:utf-8 -*-
+
+&quot;&quot;&quot;
+    Author: JinHelen
+    Date: 2019-04-21
+    Desc: 统计出现标签及出现的次数
+&quot;&quot;&quot;
+
+import json
+
+def _analysis_tag():
+    tag_dict = dict()
+    path = &quot;./data/book_mess.txt&quot;
+    for line in open(path, &quot;r&quot;, encoding=&quot;utf-8&quot;).readlines():
+        _list = line.strip().split(&quot;\t&quot;)
+        # 每一行的长度为5
+        if _list.__len__()!=5:
+            continue
+        for tag in _list[-1].split(&quot;,&quot;):
+            if tag !=&quot;&quot;:
+                tag_dict.setdefault(tag,0)
+                tag_dict[tag] += 1
+    # 取前100个标签，排序
+    new_tag_dict = sorted(tag_dict.items(),key=lambda k:k[1],reverse=True)[:100]
+    json.dump(dict(new_tag_dict), open(&quot;data/tags.json&quot;, 'w', encoding=&quot;utf-8&quot;))
+
+_analysis_tag()
+</code></pre>
+<p>（2）得到tags.json</p>
+<pre><code>{&quot;\u5c0f\u8bf4&quot;: 5849, &quot;\u5386\u53f2&quot;: 3514, &quot;\u65e5\u672c&quot;: 2959,
+.......
+&quot;\u5b66\u672f&quot;: 256, &quot;\u6d77\u5916\u4e2d\u56fd\u7814\u7a76&quot;: 256}
+</code></pre>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-ling-zhi-django-chuang-jian">
+              <h3 class="post-title">
+                图书推荐系统（零）之Django创建
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'fc88ed3cf831faf032b7',
+    clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
+    repo: 'JinHelen.github.io',
+    owner: 'JinHelen',
+    admin: ['JinHelen'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>

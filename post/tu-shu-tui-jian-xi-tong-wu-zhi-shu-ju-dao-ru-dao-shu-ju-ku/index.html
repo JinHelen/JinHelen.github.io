@@ -1,0 +1,288 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图书推荐系统（五）之数据导入到数据库 | JinHelen</title>
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1555899881672">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://JinHelen.github.io">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1555899881672" alt="">
+  </a>
+  <h1 class="site-title">
+    JinHelen
+  </h1>
+  <p class="site-description">
+    I can do it!
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/JinHelen" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              图书推荐系统（五）之数据导入到数据库
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-04-22 ·
+              </time>
+              
+                <a href="https://JinHelen.github.io/tag/50RlkVQ2x" class="post-tags">
+                  # 推荐系统
+                </a>
+              
+            </div>
+            
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-wu-zhi-shu-ju-dao-ru-dao-shu-ju-ku.jpeg')">
+              </div>
+            
+            <div class="post-content">
+              <p>将获取的数据保存到数据库中</p>
+<!-- more --> 
+<h2 id="1-准备user的数据导入">1、准备user的数据导入</h2>
+<p>（1）prepare.py</p>
+<pre><code># -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+    Author: JinHelen
+    Date：2019-04-21
+    Desc：准备user的数据导入mysql
+&quot;&quot;&quot;
+
+import os,django
+#存放所有的环境变量，目的是为了任何一个django project中的*.py文件都能够正常的使用项目中的数据模型操作
+os.environ[&quot;DJANGO_SETTINGS_MODULE&quot;]=&quot;Book.settings&quot;
+django.setup()
+&quot;&quot;&quot;
+ 上边import 解决错误：
+ django.core.exceptions.ImproperlyConfigured: Requested setting INSTALLED_APPS, but settings are not 
+ django.core.exceptions.AppRegistryNotReady: Apps aren't loaded yet.
+&quot;&quot;&quot;
+from user.models import User
+
+user_path = &quot;../data/select_users.txt&quot;
+
+pwd = &quot;123456&quot;
+
+for line in open(user_path,&quot;r&quot;):
+    uname = line.strip()
+    User(username=uname,password=pwd,isnewuser=False).save()
+    print(&quot;User 信息导入数据库完成，密码全部初始化为123456，是否是新注册用户初始化为False！&quot;)
+
+</code></pre>
+<p>（2）index/models.py</p>
+<pre><code>#-*- coding: utf-8 -*-
+
+from django.db import models
+
+# Create your models here.
+
+class User(models.Model):
+    # 用户名和密码
+    # blank=True，那么 Django 的管理后台就允许该字段填写空值；verbose_name：提供自述名
+    username = models.CharField(blank=True,verbose_name=&quot;用户名&quot;,unique=True,max_length=20)
+    password = models.CharField(blank=True,verbose_name=&quot;密码&quot;,max_length=6,default=&quot;123456&quot;)
+    regtime = models.DateTimeField(verbose_name=&quot;注册时间&quot;,auto_now=True)
+    isnewuser = models.BooleanField(blank=True,verbose_name=&quot;是否注册用户&quot;,default=True)
+
+    # 输出object调用str()时应返回的值
+    def __str__(self):
+        return self.username
+    #定义模型的元数据（任何不是字段的数据），里面的选项不是必须的
+    class Meta:
+        #该模型所使用的数据库表的名称
+        db_table = 'user'
+        #该对象复数形式的名称
+        verbose_name_plural = &quot;用户表&quot;
+</code></pre>
+<h2 id="2-准备book的数据导入mysql">2、准备book的数据导入mysql</h2>
+<p>（1）prepare_book_mess.py</p>
+<pre><code># -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+    Author: JinHelen
+    Date：2019-04-15
+    Desc：准备book的数据导入mysql
+&quot;&quot;&quot;
+import os,django
+os.environ[&quot;DJANGO_SETTINGS_MODULE&quot;]=&quot;Book.settings&quot;
+django.setup()
+&quot;&quot;&quot;
+ 上边import 解决错误：
+ django.core.exceptions.ImproperlyConfigured: Requested setting INSTALLED_APPS, but settings are not 
+ django.core.exceptions.AppRegistryNotReady: Apps aren't loaded yet.
+&quot;&quot;&quot;
+
+from index.models import Book
+# 图书信息表
+book_mess_pass = &quot;../data/book_mess.txt&quot;
+
+# 写入数据库
+_have_write_ids = list()
+for line in open(book_mess_pass,&quot;r&quot;,encoding='utf-8'):
+    bookid,bookname,bookimg,bookscore,booktag = line.strip().split(&quot;\t&quot;)
+    if bookscore == &quot;&quot;:
+        bookscore = 1.0
+    else:
+        bookscore = float(bookscore)
+    #爬取过程中数据有重复
+    if bookid in _have_write_ids:
+        print(&quot;该图书信息({})已经写入数据库&quot;.format(bookid))
+        continue
+    else:
+        Book(bookid=bookid, bookname=bookname, bookimg = bookimg, bookscore=bookscore, booktag=booktag).save()
+        _have_write_ids.append(bookid)
+print(&quot;图书信息写入数据库完成！&quot;)
+</code></pre>
+<p>（2）index/models.py</p>
+<pre><code># -*- conding:utf-8 -*-
+
+from django.db import models
+
+# Create your models here.
+
+# 图书信息类
+&quot;&quot;&quot;
+4758387	并州迷雾	https://img1.doubanio.com/view/subject/l/public/s4377217.jpg	7.4	狄仁杰,推理,悬疑,小说,安娜芳芳,中国,同人作品,神探狄仁杰
+&quot;&quot;&quot;
+class Book(models.Model):
+    bookid = models.CharField(blank=True, verbose_name=&quot;图书ID&quot;, unique=True, max_length=20)
+    bookname = models.CharField(blank=True, verbose_name=&quot;图书名字&quot;, max_length=100)
+    bookimg = models.CharField(blank=False, verbose_name=&quot;图书封面链接&quot;, max_length=300)
+    bookscore = models.FloatField(blank=False, verbose_name=&quot;图书评分&quot;, default=1.0)
+    booktag = models.CharField(blank=True, verbose_name=&quot;图书标签&quot;, unique=False, max_length=400)
+
+    def __str__(self):
+        return self.bookname
+
+    def tag_split(self):
+        return self.booktag.split(&quot;,&quot;)
+
+    class Meta:
+        db_table = &quot;bookmess&quot;
+        verbose_name_plural = &quot;图书信息表&quot;
+
+# 图书评分表
+class BookScore(models.Model):
+    userid = models.CharField(blank=True, verbose_name=&quot;用户ID&quot;, max_length=20)
+    bookid = models.CharField(blank=True, verbose_name=&quot;图书ID&quot;, max_length=20)
+    bookscore = models.FloatField(blank=True, verbose_name=&quot;用户对图书的评分&quot;)
+    actiontime = models.DateTimeField(verbose_name=&quot;评分时间&quot;, auto_now=True)
+
+    def __str__(self):
+        return self.userid
+
+    class Meta:
+        db_table = 'bookscore'
+        verbose_name_plural = &quot;图书评分表&quot;
+</code></pre>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-si-zhi-ji-yu-wu-pin-de-xie-tong-guo-lu">
+              <h3 class="post-title">
+                图书推荐系统（四）之基于物品的协同过滤
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'fc88ed3cf831faf032b7',
+    clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
+    repo: 'JinHelen.github.io',
+    owner: 'JinHelen',
+    admin: ['JinHelen'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>
