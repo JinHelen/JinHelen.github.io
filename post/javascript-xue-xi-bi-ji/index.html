@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
 <meta name="description" content="" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>关于 | JinHelen</title>
+<title>JavaScript学习笔记 | JinHelen</title>
 <link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1583395785525">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
@@ -76,23 +76,64 @@
         <div class="post-detail">
           <article class="post">
             <h2 class="post-title">
-              关于
+              JavaScript学习笔记
             </h2>
             <div class="post-info">
               <time class="post-time">
-                · 2019-01-25 ·
+                · 2019-04-23 ·
               </time>
               
             </div>
             
             <div class="post-content">
-              <p>这里是JinHelen的博客，分享机器学习、推荐系统、计算机视觉、python相关知识，还有自己的感悟，记录自己的成长。
-everything is possible,I believe I can do it!🚀</p>
+              <h2 id="1-什么是javascript">1、什么是JavaScript？</h2>
+<p>JavaScript是一种运行在浏览器中的解释型的编程语言。
+它可用于网页特效、表单验证、响应事件等等。</p>
+<h2 id="2-基础知识">2、基础知识</h2>
+<h3 id="21-存放位置">2.1 存放位置</h3>
+<p>（1）JavaScript可以嵌在网页的任何地方，习惯放在<code>&lt;head&gt;</code>中。
+（2）把JavaScript代码放到一个单独的.js文件，然后在HTML中通过<code>&lt;script src=&quot;...&quot;&gt;&lt;/script&gt;</code>引入这个文件：</p>
+<h3 id="22-基本语法">2.2 基本语法</h3>
+<p>JavaScript的语法和Java语言类似，每个语句以<code>;</code>结束，语句块用<code>{...}</code>。</p>
+<pre><code>if (2 &gt; 1) {
+    x = 1;
+    y = 2;
+    z = 3;
+}
+</code></pre>
+<p>注释：采用<code>//</code>或<code>/*...*/</code></p>
+<h3 id="23-数据类型">2.3 数据类型</h3>
+<p>（1）数组：用<code>[]</code>表示</p>
+<pre><code>[1, 2, 3.14, 'Hello', null, true];
+new Array(1, 2, 3); // 创建了数组[1, 2, 3]
+</code></pre>
+<p>（2）对象：键值对</p>
+<pre><code>var person = {
+    name: 'Bob',
+    age: 20,
+    tags: ['js', 'web', 'mobile'],
+    city: 'Beijing',
+};
+
+person.name; // 'Bob'
+</code></pre>
+<h2 id="3-浏览器">3、浏览器</h2>
+<p>JavaScript可以获取浏览器提供的很多对象，并进行操作。
+window对象不但充当全局作用域，而且表示浏览器窗口，</p>
 
             </div>
           </article>
         </div>
     
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-liu-zhi-pei-zhi-ying-yong-index">
+              <h3 class="post-title">
+                图书推荐系统（六）之配置应用index
+              </h3>
+            </a>
+          </div>  
         
 
         

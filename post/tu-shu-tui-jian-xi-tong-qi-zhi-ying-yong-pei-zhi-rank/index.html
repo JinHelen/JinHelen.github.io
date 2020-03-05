@@ -1,0 +1,507 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图书推荐系统（七）之应用配置rank | JinHelen</title>
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1583395785525">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://JinHelen.github.io">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1583395785525" alt="">
+  </a>
+  <h1 class="site-title">
+    JinHelen
+  </h1>
+  <p class="site-description">
+    I can do it!
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/JinHelen" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              图书推荐系统（七）之应用配置rank
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-05-05 ·
+              </time>
+              
+            </div>
+            
+            <div class="post-content">
+              <!-- more --> 
+<h2 id="1-url配置">1、url配置</h2>
+<p>在<code>rank</code>目录添加<code>urls.py</code></p>
+<pre><code>from django.conf.urls import url
+from rank.views import score,tag,all
+
+urlpatterns = [
+    url(r'^score/$', score),
+    url(r'^tag/$', tag),
+    url(r'all/$',all),
+]
+</code></pre>
+<h2 id="2-index应用目录结构">2、index应用目录结构</h2>
+<pre><code>├── index
+    │   ├── __init__.py  # 配置应用
+    │   ├── admin.py   # 提供django.contrib.admin 模块管理我们创建的数据模型
+    │   ├── apps.py
+    │   ├── migrations  # 是一个文件夹，用于数据模型与数据库结构的同步
+    │   ├── models.py  # 用于定义数据模型
+    │   ├── tests.py      # 供单元测试使用
+    │   └── views.py     # 是写主要的业务逻辑的地方
+		│   └── urls.py     
+		
+</code></pre>
+<h2 id="3-视图和模板">3、视图和模板</h2>
+<p>分为三个模块，分别是高分榜、标签榜单、所有图书。
+首先用户登录，将用户名写入session，若未登录，则跳转到登录界面login.html
+（1）高分榜
+<strong>@views.py</strong></p>
+<p>1）从数据库Book表筛选出评分高于9.5的前100本图书，逆序排列；
+2）分页，每页展示20条内容
+3）传参到rank.html</p>
+<pre><code>def score(request):
+    # 登录是将用户写入session，此时若获取不到，则返回错误
+    username = request.COOKIES.get('name')
+    # 如果用户未登录
+    if not username:
+        return render_to_response('login.html',{
+            'error':'用户未登录，请先登录！',
+            'user_name':&quot;&quot;,
+            'user_pwd':&quot;&quot;,
+        })
+    # 筛选出评分高于9.5的前100本图书,&quot;-bookscore&quot;表示逆序
+    books = Book.objects.filter(bookscore__gt=9.5).order_by(&quot;-bookscore&quot;)[:100]
+
+    # 分页，每页展示20条内容
+    paginator = Paginator(books, 20)
+    #寻找名为page的GET参数
+    page = request.GET.get('page')
+    try:
+        new_book = paginator.page(page)
+    except PageNotAnInteger:
+        # 若页数不是整数，转向第一页
+        new_book = paginator.page(1)
+    except EmptyPage:
+        # 若页数超出范围了，转向结果最后一页,paginator.num_pages表示页面总数
+        new_book = paginator.page(paginator.num_pages)
+    return render_to_response(&quot;rank.html&quot;,{
+        &quot;user_name&quot;:username,
+        &quot;books&quot;:new_book,
+        &quot;type&quot;:1,
+        &quot;len_list&quot;:range(1,paginator.num_pages + 1),
+    })
+</code></pre>
+<p><strong>@rank.html</strong>
+1)设置表头
+2)从views.py获取books，采用for循环传递图书信息
+3)采用Django自带的Paginator分页工具。
+补充：Paginator分页步骤：
+获取要展示的对象列表，将列表和每页个数传递给Paginator，返回一个分页对象，调用该对象的各种方法，获取各种分页信息，在HTML模板中，使用上面的分页信息构建分页栏。</p>
+<pre><code>&lt;!--高分榜--&gt;
+        {% ifequal type 1 %}
+            &lt;ul class=&quot;rankcan&quot;&gt;
+                &lt;li class=&quot;recomtitle&quot;&gt;
+                    &lt;span&gt;封面&lt;/span&gt;
+                    &lt;div&gt;
+                        &lt;span&gt;书名&lt;/span&gt;
+                        &lt;span&gt;综合评分&lt;/span&gt;
+                        &lt;span&gt;查看详情&lt;/span&gt;
+                        &lt;span&gt;相关标签&lt;/span&gt;
+                    &lt;/div&gt;
+                &lt;/li&gt;
+                &lt;!--数据循环部分--&gt;
+                {% for book in books %}
+                    &lt;li class=&quot;recomitem&quot;&gt;
+                        &lt;img src=&quot;/static/bookimg/{{ book.bookid }}.jpg&quot;&gt;
+                        &lt;div&gt;
+                            &lt;span&gt;{{ book.bookname }}&lt;/span&gt;
+                            &lt;span&gt;{{ book.bookscore }}&lt;/span&gt;
+                            &lt;span&gt;&lt;a href=&quot;https://book.douban.com/subject/{{ book.bookid }}&quot; target=&quot;_blank&quot;&gt;查看详情&lt;/a&gt;&lt;/span&gt;
+                            &lt;span class=&quot;sign&quot;&gt;
+                                {% for tag in book.tag_split %}
+                                    &lt;a class=&quot;badge badge-default&quot;&gt;{{ tag }}&lt;/a&gt;
+                                {% endfor %}
+                            &lt;/span&gt;
+                        &lt;/div&gt;
+                    &lt;/li&gt;
+                {% endfor %}
+                &lt;!--数据循环部分end--&gt;
+            &lt;/ul&gt;
+        &lt;!--翻页--&gt;
+            &lt;div class=&quot;eassy-page pagen&quot;&gt;
+                &lt;ul class=&quot;pagination page-list&quot;&gt;
+                    &lt;li class=&quot;previous&quot;&gt;
+                        {% if books.has_previous %}
+                            &lt;a href=&quot;?page={{ books.previous_page_number }}&quot;&gt;&lt;span&gt;&amp;laquo;&lt;/span&gt;&lt;/a&gt;
+                        {% else %}
+                            &lt;a&gt;&lt;span&gt;&amp;laquo;&lt;/span&gt;&lt;/a&gt;
+                        {% endif %}
+                    &lt;/li&gt;
+                    {% for page in len_list %}
+                        &lt;li&gt;&lt;a href=&quot;?page={{ page }}&quot;&gt;&lt;/a&gt;&lt;/li&gt;
+                    {% endfor %}
+                    &lt;li class=&quot;next&quot;&gt;
+                        {% if books.has_next %}
+                        &lt;a href=&quot;?page={{ books.next_page_number }}&quot;&gt;&lt;span&gt;&amp;raquo;&lt;/span&gt;&lt;/a&gt;
+                        {% else %}
+                            &lt;a&gt;&lt;span&gt;&amp;raquo;&lt;/span&gt;&lt;/a&gt;
+                        {% endif %}
+                    &lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/div&gt;
+        {% endifequal %}
+        &lt;!--高分榜end--&gt;
+</code></pre>
+<p>（2）标签榜
+1）加载离线计算好的标签榜单文件，排序
+2）传递参数到rank.html
+<strong>@views.py</strong></p>
+<pre><code>def tag(request):
+    # 登陆是将用户写入session，此时若获取不到，则返回错误
+    username = request.COOKIES.get('name')
+    # 如果用户为登陆
+    if not username:
+        return render_to_response('login.html', {
+            'error': &quot;用户未登陆，请先登陆！&quot;,
+            'user_name': &quot;&quot;,
+            'user_pwd': &quot;&quot;
+        })
+
+    # 加载离线计算好的标签榜单
+    if os.path.exists(tags_path):
+        tags_dict = dict(json.load(open(tags_path,&quot;r&quot;)))
+    else:
+        print(&quot;标签统计结果文件不存在，请检查！&quot;)
+
+    new_tags_sorted_dict = sorted(tags_dict.items(),key=lambda k:k[1], reverse=True)
+    return render_to_response(&quot;rank.html&quot;,{
+        &quot;user_name&quot;:username,
+        &quot;tags&quot;:new_tags_sorted_dict,
+        &quot;type&quot;:2
+    })
+</code></pre>
+<p><strong>@rank.html</strong></p>
+<pre><code>&lt;!--标签云--&gt;
+        {% ifequal type 2 %}
+        &lt;div class=&quot;signcan&quot;&gt;
+            &lt;!--数据循环部分--&gt;
+            {% for key,value in tags %}
+            &lt;div&gt;
+                &lt;a href=&quot;/rank/all/?tag={{ key }}&quot;&gt;&lt;span class=&quot;badge badge-info&quot;&gt;{{ key }}:{{ value }}次&lt;/span&gt;&lt;/a&gt;
+            &lt;/div&gt;
+            {% endfor %}
+            &lt;!--数据循环部分end--&gt;
+        &lt;/div&gt;
+        {% endifequal %}
+        &lt;!--标签云end--&gt;
+</code></pre>
+<p>(3)所有图书
+1）采用两种方法，一个是post，一个是get，post需要自己填写信息，get直接获取信息
+2）若采用post，从数据库Book表中筛选标签和评分限制，根据评分逆序排列；若采用get，设置默认评分限制，从数据库Book表中筛选标签，根据评分逆序排列
+3）分页
+4）返回rank.html和参数
+<strong>@views.py</strong></p>
+<pre><code>def all(request):
+    # 登陆是将用户写入session，此时若获取不到，则返回错误
+    username = request.COOKIES.get('name')
+    # 如果用户为登陆
+    if not username:
+        return render_to_response('login.html', {
+            'error': &quot;用户未登陆，请先登陆！&quot;,
+            'user_name': &quot;&quot;,
+            'user_pwd': &quot;&quot;
+        })
+
+    # 如果是查询某个标签下的数据
+    # post需要提交信息，这里自己填写评分限制和标签；get直接获取信息，评分限制默认为0和10，需自己填写标签
+    if request.method == &quot;POST&quot;:
+        tag_temp = request.POST.get(&quot;tag&quot;)
+        tag = tag_temp if tag_temp else &quot;电影&quot;
+        low = request.POST.get(&quot;lowfen&quot;)
+        lowfen = float(low) if low else 0.0
+        high = request.POST.get(&quot;highfen&quot;)
+        highfen = float(high) if high else 10.0
+        books = Book.objects.filter(booktag__icontains=tag).filter(bookscore__range=(lowfen,highfen)).order_by(&quot;-bookscore&quot;)
+    # 如果get请求
+    else:
+        lowfen = &quot;0&quot;
+        highfen = &quot;10&quot;
+        get_tag = request.GET.get('tag')
+        if get_tag:
+            tag = get_tag
+            books = Book.objects.filter(booktag__icontains=tag).order_by(&quot;-bookscore&quot;)
+        elif not get_tag:
+            tag = &quot;电影&quot;
+            books = Book.objects.order_by(&quot;-bookscore&quot;)
+
+    paginator = Paginator(books, 20)
+    page = request.GET.get('page')
+    try:
+        new_book = paginator.page(page)
+    except PageNotAnInteger:
+        new_book = paginator.page(1)
+    except EmptyPage:
+        new_book = paginator.page(paginator.num_pages)
+
+    return render_to_response(&quot;rank.html&quot;,{
+        &quot;user_name&quot;:username,
+        &quot;books&quot;:new_book,
+        &quot;type&quot;:3,
+        &quot;tag&quot;:tag,
+        &quot;lowfen&quot;:lowfen,
+        &quot;highfen&quot;:highfen,
+        &quot;len_list&quot;:paginator.num_pages + 1,
+    })
+</code></pre>
+<p><strong>@rank.html</strong>
+html中name 属性用于对提交到服务器后的表单数据进行标识，或者在客户端通过 JavaScript 引用表单数据。
+1）拿到book变量，获取图书信息
+2）“我要评分”：bootstrap框架的data-toggle指以什么事件触发，常用的如modal,popover,tooltips等，data-target指事件的目标，这里是指#{{ book.bookid }}这个Dom元素的内容以模态框的形式展示。</p>
+<pre><code> &lt;!--所有图书--&gt;
+        {% ifequal type 3 %}
+        &lt;div class=&quot;rankcan&quot;&gt;
+            &lt;div class=&quot;rank_all_form&quot;&gt;
+                &lt;form class=&quot;form-inline&quot; role=&quot;form&quot; method=&quot;post&quot; action=&quot;/rank/all/&quot;&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;span&gt;输入标签 :&lt;/span&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;div class=&quot;col-sm-10&quot; style=&quot;display:inline;&quot;&gt;
+                            &lt;input type=&quot;text&quot; class=&quot;form-control&quot; name=&quot;tag&quot; id=&quot;sign&quot; value=&quot;{{ tag }}&quot;&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;span&gt;查询最低分 :&lt;/span&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;div class=&quot;col-sm-10&quot;&gt;
+                            &lt;input type=&quot;text&quot; class=&quot;form-control&quot; name=&quot;lowfen&quot; id=&quot;lowfen&quot; value=&quot;{{ lowfen }}&quot;&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;span&gt;查询最高分 :&lt;/span&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;div class=&quot;col-sm-10&quot;&gt;
+                            &lt;input type=&quot;text&quot; class=&quot;form-control&quot; name=&quot;highfen&quot; id=&quot;highfen&quot; value=&quot;{{ highfen }}&quot;&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        &lt;div class=&quot;col-sm-offset-2 col-sm-10&quot;&gt;
+                            &lt;button type=&quot;submit&quot; class=&quot;btn btn-default&quot;&gt;搜索&lt;/button&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/form&gt;
+            &lt;/div&gt;
+            &lt;br/&gt;
+            &lt;hr class=&quot;rank_all_form&quot;&gt;
+            &lt;ul&gt;
+              &lt;li class=&quot;recomtitle&quot;&gt;
+                &lt;span&gt;封面&lt;/span&gt;
+                &lt;div class=&quot;sixta&quot;&gt;
+                    &lt;span&gt;书名&lt;/span&gt;
+                    &lt;span&gt;综合评分&lt;/span&gt;
+                    &lt;span&gt;相关标签&lt;/span&gt;
+                    &lt;span&gt;查看详情&lt;/span&gt;
+                    &lt;span&gt;我要评分&lt;/span&gt;
+                &lt;/div&gt;
+              &lt;/li&gt;
+                &lt;!--数据循环部分--&gt;
+            {% for book in books %}
+            &lt;li class=&quot;recomitem&quot;&gt;
+                &lt;img src=&quot;/static/bookimg/{{ book.bookid }}.jpg&quot;&gt;
+                &lt;div class=&quot;sixta&quot;&gt;
+                    &lt;span&gt;{{ book.bookname }}&lt;/span&gt;
+                    &lt;span&gt;{{ book.bookscore }}&lt;/span&gt;
+                    &lt;span class=&quot;sign&quot;&gt;
+                        {% for tag in book.tag_split %}
+                             &lt;a class=&quot;badge badge-default&quot;&gt;{{ tag }}&lt;/a&gt;
+                        {% endfor %}
+                    &lt;/span&gt;
+                    &lt;span&gt;&lt;a href=&quot;https://book.douban.com/subject/{{ book.bookid }}&quot; target=&quot;_blank&quot;&gt;查看详情&lt;/a&gt;&lt;/span&gt;
+                    &lt;span class=&quot;fenbtn&quot; data-toggle=&quot;modal&quot; data-target=&quot;#{{ book.bookid }}&quot;&gt;我要评分&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/li&gt;
+            &lt;div class=&quot;modal fade&quot; id=&quot;{{ book.id }}&quot; tabindex=&quot;-1&quot; role=&quot;dialog&quot; aria-labelledby=&quot;myModalLabel&quot; aria-hidden=&quot;true&quot;&gt;
+                &lt;div class=&quot;modal-dialog&quot;&gt;
+                    &lt;div class=&quot;modal-content&quot;&gt;
+                        &lt;div class=&quot;modal-header&quot;&gt;
+                            &lt;button type=&quot;button&quot; class=&quot;close&quot; data-dismiss=&quot;modal&quot; aria-hidden=&quot;true&quot;&gt;&amp;times;&lt;/button&gt;
+                            &lt;h4 class=&quot;modal-title&quot; id=&quot;myModalLabel&quot;&gt;我要评分&lt;/h4&gt;
+                        &lt;/div&gt;
+                        &lt;div class=&quot;modal-body&quot;&gt;
+                            &lt;form role=&quot;form&quot; method=&quot;post&quot; action=&quot;/user/action/&quot;&gt;
+                                &lt;div class=&quot;form-group&quot;&gt;
+                                    &lt;label for=&quot;name&quot;&gt;图书iD&lt;/label&gt;
+                                    &lt;input type=&quot;text&quot; class=&quot;form-control&quot; disabled value=&quot;{{ book.bookid }}&quot;&gt;
+                                    &lt;input type=&quot;hidden&quot; class=&quot;form-control&quot; id=&quot;bookid&quot; name=&quot;bookid&quot; value=&quot;{{ book.bookname }}&quot;&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;form-group&quot;&gt;
+                                    &lt;label for=&quot;name&quot;&gt;书名&lt;/label&gt;
+                                    &lt;input type=&quot;text&quot; class=&quot;form-control&quot; id=&quot;bookname&quot; name=&quot;bookname&quot; disabled value=&quot;{{ book.bookname }}&quot;&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;form-group&quot;&gt;
+                                    &lt;label for=&quot;name&quot;&gt;评分&lt;/label&gt;
+                                    &lt;input type=&quot;text&quot; class=&quot;form-control&quot; id=&quot;bookscore&quot; name=&quot;bookscore&quot; placeholder=&quot;请输入评分&quot;&gt;
+                                &lt;/div&gt;
+                                &lt;div class=&quot;modal-footer&quot;&gt;
+                                    &lt;button type=&quot;button&quot; class=&quot;btn btn-default&quot; data-dismiss=&quot;modal&quot;&gt;关闭&lt;/button&gt;
+                                    &lt;button type=&quot;submit&quot; class=&quot;btn btn-primary&quot;&gt;提交&lt;/button&gt;
+                                &lt;/div&gt;
+                            &lt;/form&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            {% endfor %}
+                &lt;!--数据循环部分end--&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;eassy-page pagan&quot;&gt;
+            &lt;ul class=&quot;pagination page-list page-listli&quot;&gt;
+                &lt;li class=&quot;previous&quot;&gt;
+                    {% if books.has_previous %}
+                        &lt;a href=&quot;?page={{ books.previous_page_number }}&amp;tag={{ tag }}&quot;&gt;&lt;span&gt;上一页&lt;/span&gt;&lt;/a&gt;
+                    {% else %}
+                        &lt;a&gt;&lt;span&gt;上一页&lt;/span&gt;&lt;/a&gt;
+                    {% endif %}
+                &lt;/li&gt;
+                &lt;div class=&quot;form-group jump&quot;&gt;
+                    &lt;span for=&quot;name&quot;&gt;输入页数(共:{{ len_list }}页)&lt;/span&gt;
+                    &lt;input type=&quot;text&quot; class=&quot;form-control&quot; id=&quot;pageid&quot; name=&quot;pageid&quot;&gt;
+                    &lt;button type=&quot;button&quot; class=&quot;btn btn-primary&quot; onclick=&quot;transform()&quot;&gt;跳转&lt;/button&gt;
+                &lt;/div&gt;
+                &lt;li class=&quot;next&quot;&gt;
+                    {% if books.has_next %}
+                        &lt;a href=&quot;?page={{ books.next_page_number }}&amp;tag={{ tag }}&quot;&gt;&lt;span&gt;下一页&lt;/span&gt;&lt;/a&gt;
+                    {% else %}
+                        &lt;a&gt;&lt;span&gt;下一页&lt;/span&gt;&lt;/a&gt;
+                &lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+        {% endifequal %}
+        &lt;!--所有图书end--&gt;
+				
+				# 跳转
+				&lt;script language=&quot;javascript&quot; type=&quot;text/javascript&quot;&gt;
+    function transform() {
+        var page = document.getElementById('pageid').value;
+        location.href = &quot;/rank/all/?page=&quot;+page;
+    }
+&lt;/script&gt;
+</code></pre>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/django-bi-ji-er-zhi">
+              <h3 class="post-title">
+                Django笔记（二）之
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'fc88ed3cf831faf032b7',
+    clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
+    repo: 'JinHelen.github.io',
+    owner: 'JinHelen',
+    admin: ['JinHelen'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>

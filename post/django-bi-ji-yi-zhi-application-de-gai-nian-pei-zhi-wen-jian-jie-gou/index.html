@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
 <meta name="description" content="" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Django之文件迁移 | JinHelen</title>
+<title>Django笔记（一）之application 的概念、配置、文件结构 | JinHelen</title>
 <link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1583395785525">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 <link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
@@ -76,11 +76,11 @@
         <div class="post-detail">
           <article class="post">
             <h2 class="post-title">
-              Django之文件迁移
+              Django笔记（一）之application 的概念、配置、文件结构
             </h2>
             <div class="post-info">
               <time class="post-time">
-                · 2019-04-19 ·
+                · 2019-04-22 ·
               </time>
               
                 <a href="https://JinHelen.github.io/tag/IbfAfuwK0" class="post-tags">
@@ -89,67 +89,65 @@
               
             </div>
             
-              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/django-zhi-wen-jian-qian-yi.jpeg')">
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/django-bi-ji-yi-zhi-application-de-gai-nian-pei-zhi-wen-jian-jie-gou.jpg')">
               </div>
             
             <div class="post-content">
-              <p>那些年遇到的django的坑</p>
+              <p>Django 中的 application 的概念、配置、文件结构</p>
 <!-- more --> 
-<h2 id="安装依赖包">安装依赖包</h2>
-<p>requirements.txt
-内容如下：</p>
-<pre><code>Django==2.1.0
-requests==2.21.0
-PyMySQL==0.9.2
-BeautifulSoup4==4.6.3
-setuptools==39.1.0
+<h2 id="1-django项目的组成结构">1、Django项目的组成结构</h2>
+<p>在 Django 的语境中，<code>project</code>指的是整个 Web 项目/网站/系统，<code>application</code>指的是这个项目中的模块组件，负责实现项目的一部分功能。 比如一个电子商务系统，如果用 Django 来开发，它的账户体系、支付系统、商品体系等模块的代码， 就可以分别组织成不同的 application。所有的 application 加在一起，再加上项目的全局配置， 组成了 project。</p>
+<p>Django项目的组成结构如下：</p>
+<pre><code>.
+└── ProjectName
+    ├── manage.py
+    ├── ProjectName
+    │   ├── settings.py
+    │   ├── urls.py
+    │   └── wsgi.py
+    ├── application1
+    │   ├── ...
+    ├── application2
+    │   ├── ...
+    └── application3
+    │   ├── ...
+    │────── ...
 </code></pre>
-<p>在终端执行</p>
-<pre><code>pip install -r requirements.txt
+<h2 id="2-生成应用">2、生成应用</h2>
+<p>（1）添加一个名为 myapp 的 application</p>
+<pre><code>python manage.py startapp myapp
 </code></pre>
-<h2 id="启动django">启动django</h2>
-<p>（1）创建项目</p>
-<pre><code>django-admin startproject BookRec
+<p>（2）生成的文件结构如下：</p>
+<pre><code>├── myapp
+    │   ├── __init__.py
+    │   ├── admin.py   # 提供django.contrib.admin 模块管理我们创建的数据模型
+    │   ├── apps.py
+    │   ├── migrations  # 是一个文件夹，用于数据模型与数据库结构的同步
+    │   ├── models.py  # 用于定义数据模型
+    │   ├── tests.py      # 供单元测试使用
+    │   └── views.py     # 是写主要的业务逻辑的地方
 </code></pre>
-<p>（2）创建APP</p>
-<pre><code>python manage.py startapp index
-python manage.py startapp user
-python manage.py startapp rank 
+<p>其中，<code>apps.py</code>文件中定义了一个名为 <code>MyappConfig</code>的类，这是自动生成的</p>
+<pre><code>from django.apps import AppConfig
+
+class MyappConfig(AppConfig):
+    name = 'myapp'
 </code></pre>
-<p>（3）创建数据库bookrec</p>
-<p><img src="https://JinHelen.github.io/post-images/1555687430530.png" alt="">
-写上面这两句之后，输入密码，进入数据库</p>
-<pre><code>create database bookrec
-</code></pre>
-<p>（4）在django项目配置mysql</p>
-<pre><code>DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bookrec',
-        'USER':'root',#这里改成自己的数据库名字
-        'PASSWORD':'123456',#这里改成自己数据库的密码
-        'HOST':'127.0.0.1',
-        'PORT':'3306',
-    }
-}
-</code></pre>
-<p>（5）执行迁移，数据库同步</p>
-<pre><code>python manage.py makemigrations
-python manage.py migrate
-</code></pre>
-<p>（6）将数据写入数据库
-运行z_data/to_mysql里的代码，即可</p>
-<p>（7）创建后台管理员（这里的管理员为admin/admin）</p>
-<pre><code>python manage.py createsuperuser
-</code></pre>
-<p>（8）启动服务</p>
-<pre><code>python manage.py runserver
-</code></pre>
+<p>（3）要进行 myapp 的激活，需要修改<code>ProjectName\settings.py</code> 中，<code>INSTALLED_APPS</code> 变量，添加<code>'myapp'</code>。</p>
 
             </div>
           </article>
         </div>
     
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/tu-shu-tui-jian-xi-tong-wu-zhi-shu-ju-dao-ru-dao-shu-ju-ku">
+              <h3 class="post-title">
+                图书推荐系统（五）之数据导入到数据库
+              </h3>
+            </a>
+          </div>  
         
 
         

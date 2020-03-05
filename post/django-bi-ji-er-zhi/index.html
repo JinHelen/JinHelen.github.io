@@ -1,0 +1,349 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Django笔记（二）之 | JinHelen</title>
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1583395785525">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://JinHelen.github.io">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1583395785525" alt="">
+  </a>
+  <h1 class="site-title">
+    JinHelen
+  </h1>
+  <p class="site-description">
+    I can do it!
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/JinHelen" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Django笔记（二）之
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-05-05 ·
+              </time>
+              
+            </div>
+            
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/django-bi-ji-er-zhi.jpg')">
+              </div>
+            
+            <div class="post-content">
+              <p>所谓的视图函数(或 视图 )，只不过是一个接受 Web 请求并返回 Web 响应的 Python 函数</p>
+<h2 id="1-viewspy与urlspy">1、views.py与urls.py</h2>
+<p>view.py里创建函数，url.py建立路径，包含函数名，表示所有指向URL的请求都应由该视图函数来处理。</p>
+<pre><code>urls.py
+
+from django.conf.urls.defaults import * 
+from mysite.views import current_datetime
+urlpatterns = patterns('',
+				(r'^time/$', current_datetime), ) #上箭头要求表达式对字符串的头部进行匹配，美元符号则 要求表达式对字符串的尾部进行匹配。
+</code></pre>
+<p>Django是怎么处理请求的： settings.py里的ROOT_URLCONF 告诉Django哪个Python模块应该用作本网站的 URLconf，然后按顺序逐个匹配URLconf里的URLpatterns，直到找到一个匹配的。当找到这个匹配 的URLpatterns就调用相关联的view函数，并把 HttpRequest 对象作为第一个参数。</p>
+<h2 id="2-动态url">2、动态URL</h2>
+<p>使用正则表达式模式 \d+ 来匹配一个或多个数字</p>
+<pre><code>from django.conf.urls.defaults import *
+from mysite.views import current_datetime, hours_ahead
+urlpatterns = patterns('', 
+		(r'^time/$', current_datetime),
+    (r'^time/plus/\d+/$', hours_ahead),
+)
+</code></pre>
+<h2 id="3-模板">3、模板</h2>
+<p>模板是一个纯文本文件，或是一个用Django模板语言标记过的普通的Python字符串，一个模板可以包含区块标签和变量。一个区块标签可 以生成内容,可以作为一个控制结构( if 语句或 for 循环),可以获取数据库内容,或者访问其他的模板标签。区块标签被 {% 和 %} 环绕。</p>
+<p>模板 渲染 就是是通过从context获取值来替换模板中变量并执行所有的区块标签。</p>
+<h3 id="31-变量">3.1 变量</h3>
+<p>用户两个大括号括起来的文字(例如 {{ person_name }} )是变量(variable) 。这意味着将按照给定的名字插入变量的值。</p>
+<h3 id="32-标签">3.2 标签</h3>
+<p>（1）if
+{% if %} 标签检查(evaluate) 一个变量，如果这个变量为真(即，变量存在，非空，不是布尔值 假)，系统会显示在 {% if %} 和 {% endif %} 之间的任何内容.</p>
+<pre><code># today_is_weekend是变量
+
+ {% if today_is_weekend %} 
+		&lt;p&gt;Welcome to the weekend!&lt;/p&gt;
+{% else %}
+		&lt;p&gt;Get back to work.&lt;/p&gt;
+{% endif %}
+</code></pre>
+<p>（2）for</p>
+<pre><code>&lt;ul&gt;
+{% for athlete in athlete_list %}
+		&lt;li&gt;{{ athlete.name }}&lt;/li&gt; {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+<p>（3）ifequal
+{% ifequal %} 标签比较两个值，当他们相同时，显示在 {% ifequal %} 和 {% endifequal %} 之中所有的值。</p>
+<pre><code>{% ifequal user currentuser %} 
+		&lt;h1&gt;Welcome!&lt;/h1&gt;
+{% endifequal %}
+</code></pre>
+<p>（4）注释</p>
+<pre><code>{# This is a comment #}
+</code></pre>
+<p>（5）过滤器
+显示的内容是变量 {{ name }} 被过滤器 lower 处理后的结果，它功能是转换文本为小写。 使用 | 来应用过滤器。</p>
+<pre><code>{{ name|lower }}
+</code></pre>
+<h3 id="33-在settingpy添加设置">3.3 在setting.py添加设置</h3>
+<p>要加载模板，首先需要将模板的保存位置告诉框架，</p>
+<pre><code>settings.py
+
+TEMPLATES = [
+		......
+    'DIRS': [os.path.join(BASE_DIR, 'templates')],
+		.......
+]
+</code></pre>
+<h3 id="34-render_to_response">3.4 render_to_response()</h3>
+<p>模板加载、上下文创建、模板解析和 HttpResponse 创建 工作均在对 render_to_response() 的调用中完成了
+这里的current_data是template里的变量</p>
+<pre><code>views.py
+
+from django.shortcuts import render_to_response 
+import datetime
+def current_datetime(request):
+		now = datetime.datetime.now()
+		return render_to_response('current_datetime.html', {'current_date': now})
+</code></pre>
+<h2 id="4-模型model">4、模型model</h2>
+<h3 id="41">4.1</h3>
+<p><strong>str</strong>() 方法告诉Python要怎样把对象当作字符串来使用，怎么显示。</p>
+<pre><code>from django.db import models
+
+class Publisher(models.Model):
+		name = models.CharField(maxlength=30)
+		address = models.CharField(maxlength=50)
+		city = models.CharField(maxlength=60) 
+		state_province = models.CharField(maxlength=30) 
+		country models.CharField(maxlength=50) 
+		website = models.URLField()
+		
+		**def __str__(self):** 
+					**returnself.name**
+</code></pre>
+<h3 id="42">4.2</h3>
+<p>（1）Publisher.objects.all() 含义
+首先，我们有一个已定义的模型 Publisher，objects是一个管理器，处理数据表的操作， all() 方法是 objects 管理器返回所有记录的一个方法。
+（2）数据过滤</p>
+<pre><code>&gt;&gt;&gt; Publisher.objects.filter(name=&quot;Apress Publishing&quot;)
+</code></pre>
+<p>相当于</p>
+<pre><code>SELECT
+		id, name, address, city, state_province, country, website
+FROM book_publisher
+WHERE name = 'Apress Publishing';
+</code></pre>
+<p>（3）获取单个对象</p>
+<pre><code> &gt;&gt;&gt; Publisher.objects.get(name=&quot;Apress Publishing&quot;)
+</code></pre>
+<p>（4）排序</p>
+<pre><code>&gt;&gt;&gt; Publisher.objects.order_by(&quot;name&quot;)
+</code></pre>
+<p>指定逆向排序</p>
+<pre><code> &gt;&gt;&gt; Publisher.objects.order_by(&quot;-name&quot;)
+</code></pre>
+<p>或者：
+这个 <code>ordering = [&quot;name&quot;]</code>告诉Django如果没有显示提供 order_by() , 就缺省按名称排序。
+Django使用内部类Meta存放用于附加描述该模型的元数据，这个类完全可以不实现。</p>
+<pre><code>class Publisher(models.Model):
+		name = models.CharField(maxlength=30)
+		address = models.CharField(maxlength=50)
+		city = models.CharField(maxlength=60) 
+		state_province = models.CharField(maxlength=30) 
+		country = models.CharField(maxlength=50) 
+		website = models.URLField()
+		
+		def __str__(self): 
+				return self.name
+				
+		**class Meta:**
+				**ordering = [&quot;name&quot;]**
+</code></pre>
+<h2 id="5-django管理站点">5、Django管理站点</h2>
+<pre><code>models.py
+
+class Book(models.Model):
+		title = models.CharField(maxlength=100) 
+		authors = models.ManyToManyField(Author) 
+		publisher = models.ForeignKey(Publisher) 
+		publication_date = models.DateField()
+		
+		class Admin:
+				**list_display = ('title', 'publisher', 'publication_date')** 
+				**list_filter = ('publisher', 'publication_date')** 
+				**ordering = ('-publication_date',)**
+				**search_fields = ('title',)**
+</code></pre>
+<p>list_display 选项控制变更列表所显示的列
+list_filter 选项在右边创建一个过滤条
+search_fields 选项创建了一个允许搜索文本内容的域</p>
+<h3 id="6-表单处理">6、表单处理</h3>
+<pre><code>views.py
+
+from django.db.models import Q
+from django.shortcuts import render_to_response 
+from models import Book
+
+def search(request):
+		query = request.GET.get('q', '') #寻找名为 q 的GET参数，而且如果参数没有提交，返回一个空的字符串
+		if query:
+				qset = (
+						Q(title__icontains=query) | 
+						Q(authors__first_name__icontains=query) |
+						Q(authors__last_name__icontains=query)
+				)
+				results = Book.objects.filter(qset).distinct()
+		else:
+				results = []
+		return render_to_response(&quot;books/search.html&quot;, {
+				&quot;results&quot;: results,
+				&quot;query&quot;: query })
+</code></pre>
+<p>（1）什么是 GET and POST 数据?
+GET 和POST 是浏览器使用的两个方法，用于发送数据到服务器端。一般来说，会在html表单里面看到:</p>
+<pre><code>&lt;form action=&quot;/books/search/&quot; method=&quot;get&quot;&gt;
+</code></pre>
+<p>它指示浏览器向/books/search/ 以GET 的方法提交数据</p>
+<p>（）补充：
+当一个页面被请示时，Django创建一个包含请求元数据的 HttpRequest 对象。 然后Django调入合适的视图，把 HttpRequest 作为视图的函数的第一个参数 传入。每个视图要负责返回一个 HttpResponse 对象。</p>
+<p>1）HttpRequest对象
+HttpRequest 表示来自某客户端的一个单独的HTTP请求。HttpRequest对象的属性包括method，GET，POST，COOKIES
+例子：</p>
+<pre><code>&lt;form action=&quot;/foo/bar/&quot; method=&quot;post&quot;&gt; 
+&lt;input type=&quot;text&quot; name=&quot;your_name&quot; /&gt; 
+&lt;select multiple=&quot;multiple&quot; name=&quot;bands&quot;&gt;
+		&lt;option value=&quot;beatles&quot;&gt;The Beatles&lt;/option&gt; 
+		&lt;option value=&quot;who&quot;&gt;The Who&lt;/option&gt;
+		&lt;option value=&quot;zombies&quot;&gt;The Zombies&lt;/option&gt;
+&lt;/select&gt;
+&lt;input type=&quot;submit&quot; /&gt;
+&lt;/form&gt;
+</code></pre>
+<p>如果用户在 your_name 中输入 &quot;John Smith&quot; ，并且在多选框中同时选择了The Beatles和The Zombies</p>
+<pre><code>&gt;&gt;&gt; request.GET
+{}
+&gt;&gt;&gt; request.POST
+{'your_name': ['John Smith'], 'bands': ['beatles', 'zombies']} 
+&gt;&gt;&gt; request.POST['your_name']
+'John Smith'
+</code></pre>
+<p>2)HttpResponse
+与Django自动创建的 HttpRequest 对象相比， HttpResponse 对象则是由你创建的。</p>
+<pre><code>&gt;&gt;&gt; response = HttpResponse(&quot;Here's the text of the Web page.&quot;)
+</code></pre>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/javascript-xue-xi-bi-ji">
+              <h3 class="post-title">
+                JavaScript学习笔记
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'fc88ed3cf831faf032b7',
+    clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
+    repo: 'JinHelen.github.io',
+    owner: 'JinHelen',
+    admin: ['JinHelen'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>

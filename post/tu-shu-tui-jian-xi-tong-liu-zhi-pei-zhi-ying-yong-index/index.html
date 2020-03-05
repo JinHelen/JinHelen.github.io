@@ -1,0 +1,551 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>图书推荐系统（六）之配置应用index | JinHelen</title>
+<link rel="shortcut icon" href="https://JinHelen.github.io/favicon.ico?v=1583395785525">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://JinHelen.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://JinHelen.github.io">
+  <img class="avatar" src="https://JinHelen.github.io/images/avatar.png?v=1583395785525" alt="">
+  </a>
+  <h1 class="site-title">
+    JinHelen
+  </h1>
+  <p class="site-description">
+    I can do it!
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+        <a href="https://github.com/JinHelen" target="_blank">
+          <i class="fab fa-github"></i>
+        </a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              图书推荐系统（六）之配置应用index
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-04-22 ·
+              </time>
+              
+                <a href="https://JinHelen.github.io/tag/50RlkVQ2x" class="post-tags">
+                  # 推荐系统
+                </a>
+              
+            </div>
+            
+              <div class="post-feature-image" style="background-image: url('https://JinHelen.github.io/post-images/tu-shu-tui-jian-xi-tong-liu-zhi-pei-zhi-ying-yong-index.jpg')">
+              </div>
+            
+            <div class="post-content">
+              <!-- more --> 
+<h2 id="1-url配置">1、url配置</h2>
+<p>（1）在Book/Book/urls.py下添加路径</p>
+<pre><code>    url(r'index/', include('index.urls'), name='index'),
+</code></pre>
+<p>（2）在<code>index</code>目录添加<code>urls.py</code>
+里面填充内容</p>
+<pre><code>from django.conf.urls import url
+from index.views import home
+
+urlpatterns = [
+    url(r'^home/$',home),
+]
+</code></pre>
+<h2 id="2-index应用目录结构">2、index应用目录结构</h2>
+<pre><code>├── index
+    │   ├── __init__.py  # 配置应用
+    │   ├── admin.py   # 提供django.contrib.admin 模块管理我们创建的数据模型
+    │   ├── apps.py
+    │   ├── migrations  # 是一个文件夹，用于数据模型与数据库结构的同步
+    │   ├── models.py  # 用于定义数据模型
+    │   ├── tests.py      # 供单元测试使用
+    │   └── views.py     # 是写主要的业务逻辑的地方
+		│   └── urls.py     
+
+</code></pre>
+<h3 id="21-initpy">2.1 <strong>init</strong>.py</h3>
+<pre><code>from django.apps import AppConfig
+
+default_app_config = 'index.IndexConfig'
+
+class IndexConfig(AppConfig):
+    name=&quot;index&quot; #app名称
+    verbose_name = u&quot;图书&quot; #后台显示的名称
+
+</code></pre>
+<h3 id="22-adminpy">2.2 admin.py</h3>
+<pre><code># -*- coding: utf-8 -*-
+
+from django.contrib import admin
+from index.models import Book,BookScore
+
+class AdminBook(admin.ModelAdmin):
+    # 配置要显示的字段的
+    list_display = ('bookid', 'bookname', 'bookimg', 'bookscore', 'booktag')
+    # 搜索功能
+    search_fields = ('bookid', 'bookname', 'bookscore')
+    # 筛选功能
+    list_filter = ('bookscore',)
+    # 排序
+    ordering = ('-bookscore',)
+admin.site.register(Book, AdminBook)
+
+class AdminBookScore(admin.ModelAdmin):
+    list_display = ('userid', 'bookid', 'bookscore','actiontime',)
+    search_fields = ('bookscore',)
+    list_filter = ('bookscore',)
+    ordering = ('-actiontime',)
+admin.site.register(BookScore, AdminBookScore)
+
+</code></pre>
+<h3 id="23-viewspy">2.3 views.py</h3>
+<p>（1）导入包</p>
+<pre><code># -*- condign:utf-8 -*-
+# 加载模板、填充 context 、将经解析的模板结果返回为 HttpResponse 
+from django.shortcuts import render_to_response
+from index.models import BookScore,Book
+import json,os
+# 获取数据
+from Book.settings import user_rec_result_path, item_sim_path, online_weight, offline_weight
+</code></pre>
+<p>在Book/settings.py下添加</p>
+<pre><code># 相关配置
+# 用户离线计算的推荐结果数据路径
+user_rec_result_path = './../BookRec/z_data/data/user_rec_result.txt'
+# 离线计算的图书相似度文件
+item_sim_path = &quot;./../BookRec/z_data/data/item_sim.json&quot;
+# 标签及其出现的次数
+tags_path = &quot;./../BookRec/z_data/data/tags.json&quot;
+# 实时计算和离线计算的推荐结果权重比例
+online_weight = 1.0
+offline_weight = 1.0
+</code></pre>
+<p>（2）建立一个函数<code>home</code><br>
+1）判断用户是否登录，若未登录则返回登录界面<br>
+2）（<code>_is_have_score(username)</code>函数）判断当前用户是否已经产生评分行为<br>
+3）（<code>_load_rec_result(username)</code>函数）如果用户已经登录，则判断用户是新注册用户还是已经存在于系统中的用户<br>
+4）是否评分
+若登录用户已经产生过评分，得到推荐列表（ <code>_cal_rec_result</code>函数），遍历bookid，从数据库Book表得到bookid的相关信息（图片、书名等），将用户民和图书信息返回<code>index.html</code>；</p>
+<p>若登录用户未产生评分行为，首先需要区分是新注册用户还是已经存在于系统中的用户。不能从离线数据<code>rec_result</code>获取当前用户推荐集的是新注册用户，筛选评分大于9.5的图书，返回评分最高的20本书；如果能获取推荐结果，则直接返回离线计算好的推荐结果</p>
+<p><strong>另：<code>_cal_rec_result</code>函数思路：</strong>
+目的是综合离线计算的推荐结果和用户评分行为产生推荐结果集
+1）查询当前用户评分的图书和对应的分数
+2）加载离线计算好的图书相似度矩阵
+3）rec_result代表推荐集，
+若为空表示新注册用户，遍历用户评过分的图书id，判断该本图书是不是用户评价过的图书，若是，则忽略，继续执行，遍历相似度矩阵，从相似度矩阵中找到相似图书，加权计算，推荐度=产生过行为的图书评分乘以产生过行为的图书评分与bid的相似度，排序，推荐前20本图书。</p>
+<p>若不为空表示存在于系统中的用户，遍历用户评过分的图书id，判断该本书是否在离线计算好的相似矩阵中，若在，继续执行，遍历相似度矩阵，从相似度矩阵中找到相似图书，加权计算，推荐度=产生过行为的图书评分乘以产生过行为的图书与bid的相似度得到推荐度，若推荐的图书已经在离线被推荐的图书列表里，最终评分加上离线的评分数据，进行综合排序。</p>
+<pre><code>index/views.py
+
+# -*- condign:utf-8 -*-
+from django.shortcuts import render_to_response
+from index.models import BookScore,Book
+import json,os
+from Book.settings import user_rec_result_path, item_sim_path, online_weight, offline_weight
+
+def home(request):
+    # 访问者在第一次访问服务器时，服务器在其cookie中设置一个唯一的ID号——会话ID(session)。
+    # 登陆是将用户写入session（服务端），此时若获取不到，则返回错误
+    # 获取当前登录用户
+    username = request.COOKIES.get('name')
+    # 如果用户未登录，则返回登录界面
+    if not username:
+        return render_to_response('login.html',{
+            'error':&quot;用户未登录，请先登录&quot;,
+            'user_name':&quot;&quot;,
+            'user_pwd':''
+        })
+
+    # 判断当前用户是否已经产生评分行为
+    is_action = _is_have_score(username)
+
+    # 如果用户已经登录，则判断用户是新注册用户还是已经存在于系统中的用户
+    rec_result = _load_rec_result(username)
+
+    # is_action 为True表示已经产生过评分行为,借鉴cf-based-item的思想进行推荐
+    # 这里不需要区分是新注册用户还是已经存在于系统中的用户，在_cal_rec_result 函数中进行判断
+    if is_action:
+        # 得到的推荐列表
+        book_scores = _cal_rec_result(username, rec_result)
+        bookids = [one[0] for one in book_scores]
+        # 字段查询：bookid__in=bookids相当于select * from Book where bookid in bookids
+        books = Book.objects.filter(bookid__in=bookids).order_by(&quot;-bookscore&quot;)
+        new_books = list()
+        for book in books:
+            _dict = dict()
+            _dict[&quot;bookimg&quot;] = book.bookimg
+            _dict[&quot;bookid&quot;] = book.bookid
+            _dict[&quot;bookscore&quot;] = book.bookscore
+            _dict[&quot;booktag&quot;] = book.booktag.split(&quot;,&quot;)
+            _dict[&quot;bookname&quot;] = book.bookname
+            _dict[&quot;bookrescore&quot;] = book.bookscore
+            new_books.append(_dict)
+        return render_to_response(&quot;index.html&quot;,{
+            &quot;user_name&quot;:username,
+            &quot;books&quot;:new_books,
+        })
+
+    # is_action 为False表示没有产生评分行为,这里区分是新注册用户还是已经存在于系统中的用户
+    else:
+        # 如果从离线结果中不能获取当前用户的推荐结果集，则为新注册用户,返回评分最高的20本图书
+        if not rec_result:
+            # 筛选评分大于9.5的图书
+            books = Book.objects.filter(bookscore__gt=9.5).order_by(&quot;-bookscore&quot;)[:20]
+            # 拼接推荐指数
+            new_books = list()
+            for book in books:
+                _dict = dict()
+                _dict[&quot;bookimg&quot;] = books.bookimg
+                _dict[&quot;bookid&quot;] = book.bookid
+                _dict[&quot;bookscore&quot;] = book.bookscore
+                _dict[&quot;booktag&quot;] = book.booktag.split(&quot;,&quot;)
+                _dict[&quot;bookname&quot;] = book.bookname
+                _dict[&quot;bookrecscore&quot;]=book.bookscore
+                new_books.append(_dict)
+        # 如果能获取推荐结果，则直接返回推荐结果
+        else:
+            bookids = rec_result.keys()
+            books = Book.objects.filter(bookid_in=bookids).order_by(&quot;-bookscore&quot;)[:20]
+            new_books = list()
+            for book in books:
+                _dict = dict()
+                _dict[&quot;bookimg&quot;] = book.bookimg
+                _dict[&quot;bookid&quot;] = book.bookid
+                _dict[&quot;bookscore&quot;] = book.bookscore
+                _dict[&quot;booktag&quot;] = book.booktag.split(&quot;,&quot;)
+                _dict[&quot;bookname&quot;] = book.bookname
+                _dict[&quot;bookrecscore&quot;] = rec_result[book.bookid]
+                new_books.append(_dict)
+        new_books.sort(key=lambda k:k[&quot;bookrecdcore&quot;],reverse=True)
+        return render_to_response(&quot;index.html&quot;,{
+            &quot;user_name&quot;:username,
+            &quot;books&quot;:new_books,
+        })
+
+
+
+# 判断当前用户是否是首次进入为你推荐模块
+def _is_have_score(user):
+    actions = BookScore.objects.filter(userid=user)
+
+# 加载当前登陆用户的离线推荐结果
+def _load_rec_result(user):
+    result = dict()
+    for line in open(user_rec_result_path,&quot;r&quot;,encoding=&quot;utf-8&quot;).readlines():
+        # 一列以user开头
+        if line.startswith(user):
+            # '_'表示忽略
+            _, bid, score = line.strip().split(&quot;,&quot;)
+            # 保留两位小数
+            result[bid] = round(float(score),2)
+    return result
+
+# 综合离线计算的推荐结果和用户评分行为产生推荐结果集
+def _cal_rec_result(user,rec_result):
+    # 查询当前用户评分的图书和对应的分数
+    actions = { one.bookid:one.bookscore for one in BookScore.objects.filter(userid=user)}
+
+    # 加载离线计算好的图书相似度矩阵
+    if os.path.exists(item_sim_path):
+        itemSim = json.load(open(item_sim_path, &quot;r&quot;))
+    else:
+        print(&quot;图书相似度文件不存在，请检查！&quot;)
+
+    # rec_result为空表示新注册用户，直接计算其评分图书的相似度
+    if not rec_result:
+        last_result = dict()
+        # 遍历用户有行为的每一本书
+        for bookid in actions.keys():
+            # 判断该本书是否在离线计算的相似key中
+            if bookid not in itemSim.keys():
+                continue
+            # sim_books={booid:相似度}
+            sim_books = itemSim[bookid]
+            # bid是要对用户推荐的图书
+            for bid in sim_books.keys():
+                # 判断该本图书是不是用户评价过的图书，若是，则忽略，继续执行
+                if bid in actions.keys():
+                    continue
+                last_result.setdefault(bid, 0.0)
+                # 推荐度=产生过行为的图书评分*产生过行为的图书评分与bid的相似度
+                last_result[bid] += sim_books[bid] * actions[bookid]
+        # 排序，推荐前20本图书
+        # new_last_result = {bid:score}
+        new_last_result = sorted(last_result.items(), key=lambda k:k[1], reverse=True)[:20]
+        return new_last_result
+    # 已经存在于系统的用户
+    else:
+        last_result = dict()
+        # 遍历用户有行为的每一本书
+        for bookid in actions.keys():
+            # 判断该本书是否在离线计算的相似key中
+            if bookid not in itemSim.keys():
+                continue
+            sim_books = itemSim[bookid]
+            # bid是要推荐的书
+            for bid in sim_books.keys():
+                if bid in actions.keys():
+                    continue
+                last_result.setdefault(bid,0.0)
+                last_result[bid] += sim_books[bid] * actions[bookid] * online_weight
+        # 若推荐的图书已经在离线被推荐的图书列表里
+        for bookid in rec_result.keys():
+            # 若图书已经被评分
+            if bookid in actions.keys():
+                continue
+            last_result.setdefault(bookid, 0.0)
+            # 加上之前的评分
+            last_result[bid] += rec_result[bookid] * offline_weight
+        new_last_result = sorted(last_result.items(), key=lambda k:k[1],reverse=True)[20]
+        return new_last_result
+</code></pre>
+<h2 id="3-templates">3、templates</h2>
+<p>（1）在Book/Book/setting.py里添加</p>
+<pre><code>        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+</code></pre>
+<p>（2）静态文件路径的配置</p>
+<pre><code>STATIC_URL = '/static/'
+# os.path.dirname(__file__) 得到文件所在目录，再来一个os.path.dirname()就是目录的上一级
+# 配置静态文件的路径
+STATIC_ROOT = os.path.join(os.path.dirname(__file__), '../static')
+STATICFILES_DIRS = (
+    ('css', os.path.join(STATIC_ROOT, 'css').replace('\\', '/')),
+    ('js', os.path.join(STATIC_ROOT, 'js').replace('\\', '/')),
+    ('img', os.path.join(STATIC_ROOT, 'img').replace('\\', '/')),
+    ('bookimg', os.path.join(STATIC_ROOT, 'bookimg').replace('\\', '/')),
+    ('uploads', os.path.join(STATIC_ROOT, 'uploads').replace('\\', '/')),
+)
+</code></pre>
+<p>（3）添加index.html</p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;图书推荐系统&lt;/title&gt;
+    &lt;link rel=&quot;shortcut icon&quot; href=&quot;/static/img/favicon.ico&quot;/&gt;
+    &lt;link rel=&quot;bookmark&quot; href=&quot;/static/img/favicon.ico&quot;/&gt;
+    &lt;link href=&quot;/static/css/bootstrap/css/bootstrap.min.css&quot; type=&quot;text/css&quot; rel=&quot;stylesheet&quot;/&gt;
+    &lt;link href=&quot;/static/css/index.css&quot; type=&quot;text/css&quot; rel=&quot;stylesheet&quot;/&gt;
+    &lt;script src=&quot;/static/js/jquery-1.10.2.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;/static/css/bootstrap/js/bootstrap.min.js&quot;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class=&quot;head&quot;&gt;
+        &lt;div class=&quot;top&quot;&gt;
+            &lt;img src=&quot;/static/img/icon.jpg&quot;&gt;
+            &lt;span&gt;&lt;a href=&quot;/user/action/&quot;&gt;{{ user_name }}&lt;/a&gt;  |  &lt;a href=&quot;/user/logout/&quot;&gt;退出&lt;/a&gt; &lt;/span&gt;
+        &lt;/div&gt;
+        &lt;ul class=&quot;menavs&quot;&gt;
+            &lt;li&gt;&lt;a class=&quot;active&quot; href=&quot;/index/home/&quot;&gt;为你推荐&lt;/a&gt;&lt;/li&gt;
+            &lt;li class=&quot;dropdown&quot;&gt;
+                &lt;!--data-toggle=&quot;dropdown&quot;是下拉菜单--&gt;
+                &lt;a href=&quot;/rank/score/&quot; class=&quot;dropdown-toggle&quot; data-toggle=&quot;dropdown&quot;&gt;排行榜&lt;span class=&quot;caret&quot;&gt;&lt;/span&gt;&lt;/a&gt;
+                &lt;ul class=&quot;dropdown-menu&quot;&gt;
+                    &lt;li&gt;&lt;a href=&quot;/rank/score/&quot;&gt;高分榜&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;/rank/tag/&quot;&gt;标签云&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href=&quot;/rank/all/&quot;&gt;所有图书&lt;/a&gt;&lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;/user/action/&quot;&gt;我的足迹&lt;/a&gt;&lt;/li&gt;
+
+        &lt;/ul&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;main&quot;&gt;
+        &lt;ul class=&quot;recomcan&quot;&gt;
+            &lt;li class=&quot;recomtitle&quot;&gt;
+                &lt;span&gt;封面&lt;/span&gt;
+                &lt;div&gt;
+                    &lt;span&gt;书名&lt;/span&gt;
+                    &lt;span&gt;推荐指数&lt;/span&gt;
+                    &lt;span&gt;图书评分&lt;/span&gt;
+                    &lt;span&gt;查看详情&lt;/span&gt;
+                    &lt;span&gt;相关标签&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/li&gt;
+            &lt;!--数据循环部分--&gt;
+            {% for book in books %}
+            &lt;li class=&quot;recomitem&quot;&gt;
+                &lt;img src=&quot;/static/bookimg/{{ book.bookid }}.jpg&quot;&gt;
+                &lt;div&gt;
+                    &lt;span&gt;{{ book.bookname }}&lt;/span&gt;
+                    &lt;span&gt;{{ book.bookrecscore }} °C&lt;/span&gt;
+                    &lt;span&gt;{{ book.bookscore }}分&lt;/span&gt;
+                    &lt;span&gt;&lt;a href=&quot;https://book.douban.com/subject/{{ book.bookid }}&quot; target=&quot;_blank&quot;&gt;查看详情&lt;/a&gt;&lt;/span&gt;
+                    &lt;span class=&quot;sign&quot;&gt;
+                        {% for tag in book.booktag %}
+                            &lt;a class=&quot;badge badge-default&quot; &gt;{{ tag }}&lt;/a&gt;
+                        {% endfor %}
+                    &lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/li&gt;
+            {% endfor %}
+            &lt;!--数据循环部分end--&gt;
+        &lt;/ul&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;foot&quot;&gt;
+        &lt;span&gt;@2019 Publish by Smile&lt;/span&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>（4）添加login.html</p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;登录&lt;/title&gt;
+    &lt;!--图标--&gt;
+    &lt;link rel=&quot;shortcut icon&quot; href=&quot;/static/img/favicon.ico&quot;/&gt;
+    &lt;link rel=&quot;bookmark&quot; href=&quot;/static/img/favicon.ico&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;/static/css/bootstrap/css/bootstrap.min.css&quot;&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;/static/css/check.css&quot;&gt;
+&lt;/head&gt;
+&lt;body class=&quot;loginbody&quot;&gt;
+    &lt;!--从views.py里获取error变量，alert表示弹出窗口&quot;用户未登录&quot;--&gt;
+    &lt;!--弹出窗口，内容是{{ login_error }}里的内容--&gt;
+    &lt;!--返回当前显示的文档的完整url--&gt;
+
+&lt;script language=&quot;JavaScript&quot;&gt;
+    { % if error % }
+        alert(&quot;{{ error }}&quot;);
+    {% endif %}
+    {% if login_error %}
+        var r = confirm(&quot;{{ login_error }}&quot;);
+        if(r==true){
+            window.location.href = '/user/login/'
+        }else{
+
+            window.location.href = '{{ form }}'
+        }
+    {% endif %}
+
+&lt;/script&gt;
+
+&lt;div class=&quot;login-main&quot;&gt;
+    &lt;h3&gt;&lt;center&gt;欢迎登录图书推荐系统&lt;/center&gt;&lt;/h3&gt;
+    &lt;form role=&quot;form&quot; method=&quot;post&quot; action=&quot;/user/login/&quot;&gt;
+            &lt;input class=&quot;incon&quot; name=&quot;username&quot; type=&quot;text&quot; placeholder=&quot;用户名&quot; value=&quot;{{ user_name }}&quot;&gt;
+            &lt;input class=&quot;incon&quot; name=&quot;password&quot; type=&quot;password&quot; placeholder=&quot;密码&quot; value=&quot;{{ uer_pwd }}&quot;&gt;
+            &lt;input class=&quot;btnincon&quot; type=&quot;submit&quot; value=&quot;登录&quot;&gt;
+            &lt;hr style=&quot;height:1px;border:none;border-top:1px solid darkgray;&quot; /&gt;
+            &lt;a href=&quot;/user/register&quot; class=&quot;fl acon&quot;&gt; 新用户？去注册&lt;/a&gt;
+            &lt;!--target=&quot;_blank&quot;：在新窗口中打开被链接文档--&gt;
+            &lt;a class=&quot;fr acon&quot; href=&quot;/admin/login/&quot; target=&quot;_blank&quot;&gt;管理员登录&lt;/a&gt;
+    &lt;/form&gt;
+
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://JinHelen.github.io/post/django-bi-ji-yi-zhi-application-de-gai-nian-pei-zhi-wen-jian-jie-gou">
+              <h3 class="post-title">
+                Django笔记（一）之application 的概念、配置、文件结构
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: 'fc88ed3cf831faf032b7',
+    clientSecret: 'e1093c3e8fdc18a47b748bebc37bacd4fa35eddb',
+    repo: 'JinHelen.github.io',
+    owner: 'JinHelen',
+    admin: ['JinHelen'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+        
+    
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>
